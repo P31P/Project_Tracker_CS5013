@@ -1,16 +1,53 @@
 # Scaffolding: creating the project skeleton
 
-This covers handoffs **H1** (Maven skeleton + CI) and **H2** (`LlmClient`) from [plans/SUJAL.md](plans/SUJAL.md). It builds only the empty project that both of you work on. The schema (H4), security (H6) and all features come later.
+This covers handoff **H1** (Maven skeleton + CI) from [plans/SUJAL.md](plans/SUJAL.md). It builds only the empty project that both of you work on. Everything else comes later, one task at a time.
 
 It includes only the dependencies the skeleton needs. Every later task adds its own libraries to `pom.xml` and `requirements.txt` in the same PR.
 
-When you've finished, `./mvnw verify` passes locally and on GitHub, and the app starts on a local Postgres.
+When you've finished, `mvn verify` passes locally and on GitHub, and the app starts on a local Postgres.
 
 | Piece | Version |
 |---|---|
 | Java | 21 (LTS) |
 | Spring Boot | 4.1.1 |
-| Zonky `embedded-postgres` | 2.2.2 (Postgres binaries 18.6.0) |
+| Zonky `embedded-postgres` | 2.2.2 (Postgres binaries 16.15.0) |
+
+---
+
+## What the scaffold creates
+
+```
+Project_Tracker_CS5013/
+├── pom.xml
+├── .github/workflows/ci.yml
+└── src/
+    ├── main/
+    │   ├── java/tracker/
+    │   │   └── TrackerApplication.java
+    │   └── resources/
+    │       ├── application.yml
+    │       ├── application-local.yml
+    │       ├── db/migration/.gitkeep
+    │       └── static/
+    │           ├── index.html
+    │           ├── css/app.css
+    │           └── js/app.js
+    └── test/java/tracker/
+        ├── TrackerApplicationTests.java
+        └── support/PostgresTestBase.java
+```
+
+| File | Step | Purpose |
+|---|---|---|
+| `pom.xml` | 2 | Build file with scaffold dependencies only |
+| `application.yml` | 3 | Shared config; secrets come from env / `.env` |
+| `application-local.yml` | 3 | Debug logging for local runs |
+| `TrackerApplication.java` | 4 | Spring Boot entry point |
+| `support/PostgresTestBase.java` | 5 | Base class that starts embedded Postgres for tests |
+| `TrackerApplicationTests.java` | 5 | Checks the app starts |
+| `db/migration/.gitkeep` | 1 | Placeholder until `V1__init.sql` (H4) |
+| `static/index.html`, `app.css`, `app.js` | 6 | Placeholder page, replaced in H7 |
+| `.github/workflows/ci.yml` | 7 | Runs `mvn verify` on pushes and PRs |
 
 ---
 
@@ -36,19 +73,19 @@ sudo -u postgres psql -c "CREATE DATABASE tracker OWNER tracker;"
 ## Step 1: Branch and folders
 
 ```bash
-git checkout -b d/scaffold
+git checkout -b scaffold
 
-BASE=src/main/java/in/ac/iitm/ramanlab/tracker
-TEST=src/test/java/in/ac/iitm/ramanlab/tracker
+BASE=src/main/java/tracker
+TEST=src/test/java/tracker
 
-mkdir -p $BASE/{config,common,auth,data,projects,llm,autofill,slack,papers,search}
+mkdir -p $BASE
 mkdir -p src/main/resources/{db/migration,static/{css,js}}
-mkdir -p $TEST/{support,llm}
+mkdir -p $TEST/support
 mkdir -p .github/workflows
 touch src/main/resources/db/migration/.gitkeep
 ```
 
-Sub-packages (`data/entity`, `papers/resolver`, …) and folders like `deploy/` and `fixtures/` are created by the task that first needs them.
+Module packages (`auth`, `data`, `slack`, …) and folders like `deploy/` are created by the task that first needs them.
 
 ---
 
@@ -68,7 +105,7 @@ Sub-packages (`data/entity`, `papers/resolver`, …) and folders like `deploy/` 
         <relativePath/>
     </parent>
 
-    <groupId>in.ac.iitm.ramanlab</groupId>
+    <groupId>ramanlab</groupId>
     <artifactId>tracker</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <name>Raman Lab Tracker</name>
@@ -76,12 +113,12 @@ Sub-packages (`data/entity`, `papers/resolver`, …) and folders like `deploy/` 
     <properties>
         <java.version>21</java.version>
         <embedded-postgres.version>2.2.2</embedded-postgres.version>
-        <embedded-postgres-binaries.version>18.6.0</embedded-postgres-binaries.version>
+        <embedded-postgres-binaries.version>16.15.0</embedded-postgres-binaries.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- keep the major version equal to the lab server's Postgres -->
+            <!-- keep the major version equal to the Postgres we run against -->
             <dependency>
                 <groupId>io.zonky.test.postgres</groupId>
                 <artifactId>embedded-postgres-binaries-bom</artifactId>
@@ -139,12 +176,6 @@ Sub-packages (`data/entity`, `papers/resolver`, …) and folders like `deploy/` 
 </project>
 ```
 
-Then generate the Maven wrapper. After that, nobody else needs Maven installed:
-
-```bash
-mvn -N wrapper:wrapper
-```
-
 ---
 
 ## Step 3: Configuration
@@ -168,35 +199,16 @@ spring:
 
 server:
   port: ${PORT:8080}
-
-llm:
-  provider: ${LLM_PROVIDER:disabled}
 ```
 
-The `.env` import lets `./mvnw spring-boot:run` pick up local settings. Later tasks add their own sections (`slack:`, Google OAuth, and so on).
+The `.env` import lets `mvn spring-boot:run` pick up local settings. Later tasks add their own sections.
 
 **`src/main/resources/application-local.yml`**
 
 ```yaml
 logging:
   level:
-    in.ac.iitm.ramanlab.tracker: DEBUG
-```
-
-**`src/test/resources/application-test.yml`**
-
-```yaml
-llm:
-  provider: disabled
-```
-
-**`.env.example`**: commit this one. Copy it to `.env`, which git ignores.
-
-```bash
-DB_URL=jdbc:postgresql://localhost:5432/tracker
-DB_USER=tracker
-DB_PASSWORD=tracker
-LLM_PROVIDER=disabled
+    tracker: DEBUG
 ```
 
 ---
@@ -206,7 +218,7 @@ LLM_PROVIDER=disabled
 **`$BASE/TrackerApplication.java`**
 
 ```java
-package in.ac.iitm.ramanlab.tracker;
+package tracker;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -222,97 +234,21 @@ public class TrackerApplication {
 
 ---
 
-## Step 5: Package owners (`package-info.java`)
-
-Each module package gets one of these. It keeps the empty folder in git and records the owner.
-
-```java
-/** Module A: Slack ingestion. Owner: Priyal. */
-package in.ac.iitm.ramanlab.tracker.slack;
-```
-
-| Package | Module | Owner |
-|---|---|---|
-| `config`, `common`, `auth`, `data` | D | Sujal |
-| `projects` | E | Sujal |
-| `llm`, `autofill` | F | Sujal |
-| `slack` | A | Priyal |
-| `papers` | B | Priyal |
-| `search` | C | Priyal |
-
----
-
-## Step 6: `LlmClient` (H2)
-
-**`$BASE/llm/LlmClient.java`**
-
-```java
-package in.ac.iitm.ramanlab.tracker.llm;
-
-/** Returns the model's raw reply; callers parse and validate it. */
-public interface LlmClient {
-
-    String complete(String prompt);
-}
-```
-
-**`$BASE/llm/LlmUnavailableException.java`**
-
-```java
-package in.ac.iitm.ramanlab.tracker.llm;
-
-public class LlmUnavailableException extends RuntimeException {
-
-    public LlmUnavailableException(String message) {
-        super(message);
-    }
-
-    public LlmUnavailableException(String message, Throwable cause) {
-        super(message, cause);
-    }
-}
-```
-
-**`$BASE/llm/DisabledLlmClient.java`**
-
-```java
-package in.ac.iitm.ramanlab.tracker.llm;
-
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
-
-@Component
-@ConditionalOnProperty(name = "llm.provider", havingValue = "disabled", matchIfMissing = true)
-public class DisabledLlmClient implements LlmClient {
-
-    @Override
-    public String complete(String prompt) {
-        throw new LlmUnavailableException("LLM is disabled (llm.provider=disabled)");
-    }
-}
-```
-
-`HostedLlmClient` (H8) and `LocalLlmClient` come later, using `havingValue = "hosted"` and `"local"`.
-
----
-
-## Step 7: Tests
+## Step 5: Tests
 
 **`$TEST/support/PostgresTestBase.java`**: database tests extend this class. It starts one real Postgres for the whole test run.
 
 ```java
-package in.ac.iitm.ramanlab.tracker.support;
+package tracker.support;
 
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 @SpringBootTest
-@ActiveProfiles("test")
 public abstract class PostgresTestBase {
 
     private static final EmbeddedPostgres POSTGRES = start();
@@ -337,9 +273,9 @@ public abstract class PostgresTestBase {
 **`$TEST/TrackerApplicationTests.java`**
 
 ```java
-package in.ac.iitm.ramanlab.tracker;
+package tracker;
 
-import in.ac.iitm.ramanlab.tracker.support.PostgresTestBase;
+import tracker.support.PostgresTestBase;
 import org.junit.jupiter.api.Test;
 
 class TrackerApplicationTests extends PostgresTestBase {
@@ -350,30 +286,11 @@ class TrackerApplicationTests extends PostgresTestBase {
 }
 ```
 
-**`$TEST/llm/DisabledLlmClientTest.java`**
-
-```java
-package in.ac.iitm.ramanlab.tracker.llm;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
-import org.junit.jupiter.api.Test;
-
-class DisabledLlmClientTest {
-
-    @Test
-    void refusesEveryPrompt() {
-        assertThatThrownBy(() -> new DisabledLlmClient().complete("anything"))
-                .isInstanceOf(LlmUnavailableException.class);
-    }
-}
-```
-
 Embedded Postgres won't run as root, so don't run the tests with `sudo`.
 
 ---
 
-## Step 8: Dashboard placeholder
+## Step 6: Dashboard placeholder
 
 **`src/main/resources/static/index.html`**: the real shell replaces it in H7.
 
@@ -397,7 +314,7 @@ Create empty `static/css/app.css` and `static/js/app.js` alongside it.
 
 ---
 
-## Step 9: CI
+## Step 7: CI
 
 **`.github/workflows/ci.yml`**
 
@@ -419,35 +336,20 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - run: ./mvnw -B verify
+      - run: mvn -B verify
 ```
 
 After the first merge, turn on branch protection for `main`: require the `build` check and one review.
 
 ---
 
-## Step 10: Check it works
+## Step 8: Check it works
 
 ```bash
-cp .env.example .env
-./mvnw verify
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+mvn verify
+mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 `http://localhost:8080` should show "Raman Lab Tracker is running."
 
-Leave the changes for review and open a PR from `d/scaffold`. Once it's merged, H1 and H2 are done.
-
----
-
-## Added later, by the task that needs it
-
-| Library | Task | Owner |
-|---|---|---|
-| security, OAuth2 client, security-test | Phase 0, H6 sign-in | Sujal |
-| validation, webmvc-test | Phase 1 project API | Sujal |
-| Bolt Jakarta Socket Mode, Tyrus | Phase 1 `SlackAppConfig` | Priyal |
-| WireMock | Phase 1 resolvers | Priyal |
-| Jsoup | Phase 2 meta-tag rung | Priyal |
-| PDFBox | Phase 2 PDF rung | Priyal |
-| actuator | Phase 3 health check | Sujal |
+Leave the changes for review and open a PR from `scaffold`. Once it's merged, H1 is done.

@@ -1,15 +1,13 @@
 # Priyal: Modules A, B, C (+ half of G)
 
-The paper side of the platform: Slack ingestion (A), the paper archive and resolution ladder (B), and search + paper views (C). Overall plan: [../PLAN.md](../PLAN.md).
-
-Branch prefixes: `a/…`, `b/…`, `c/…`, `g/…`
+The paper side of the platform: Slack ingestion (A), the paper archive and resolution ladder (B), and search + paper views (C). Shared phases, handoffs and schema: [SHARED.md](SHARED.md).
 
 ---
 
 ## 1. What you own
 
 ```
-src/main/java/in/ac/iitm/ramanlab/tracker/
+src/main/java/tracker/
     slack/      SlackAppConfig, MessageEventHandler, IngestionService, LinkExtractor, SlackPoller
     papers/     PaperController, PaperResolutionWorker, ResolutionLadder, resolver/*, dto/
     search/     SearchController, SearchService, SearchResult
@@ -28,20 +26,7 @@ Shared files: `pom.xml` + `requirements.txt` (add a library in the PR that needs
 
 ## 2. Handoffs
 
-This table is the same in both plans.
-
-| # | From → to | What | Needed before |
-|---|---|---|---|
-| H1 | Sujal → Priyal | Maven skeleton (`SCAFFOLDING.md`), CI | any code |
-| H2 | Sujal → Priyal | `LlmClient` + `DisabledLlmClient` | rung 3 |
-| H3 | Priyal → Sujal | Review of `slack_message`, `paper`, `paper_share`, `paper_reference` in the V1 draft | H4 |
-| H4 | Sujal → Priyal | `V1__init.sql`, entities, repositories, `PostgresTestBase` | ingestion, worker |
-| H5 | Priyal → Sujal | Slack app tokens + test-channel access (outside git) | running the full flow locally |
-| H6 | Sujal → Priyal | `SecurityConfig` + test helper for signed-in MockMvc | `PaperController`, `SearchController` |
-| H7 | Sujal → Priyal | Dashboard shell: `index.html`, `api.js`, `app.js` with `registerTab(id, label, render)` | `papers.js`, `search.js` |
-| H8 | Sujal → Priyal | `HostedLlmClient` | running rung 3 for real |
-| H9 | Sujal → Priyal | `scripts/seed-mock-data.sql` | `SearchServiceTest` |
-| H10 | Priyal → Sujal | Search migration (touches `project` and `idea`) | search |
+See [SHARED.md](SHARED.md).
 
 **Work that doesn't need any handoff:** `LinkExtractor`, the Slack app setup, and the Crossref/arXiv resolvers. A resolver only turns an HTTP response into a `ResolvedMetadata` record, so WireMock tests are enough. Test rung 3 with a fake `LlmClient` until H8 lands.
 
@@ -51,7 +36,9 @@ This table is the same in both plans.
 
 ### Phase 0: Foundations
 
-- [ ] Slack app: Socket Mode on, app-level token (`connections:write`), bot scopes `channels:history` + `channels:read`, subscribed to `message.channels`; installed in the workspace; a `#tracker-test` channel → **H5**
+- [x] Slack app "Pai project slack helper" in Socket Mode; `#scanner_testing` channel with the bot invited
+- [ ] Decide the trigger: only when @mentioned (`app_mentions:read`, `app_mention` event) or every message (`channels:history`, `message.channels`). The proposal expects capture without manual input
+- [ ] Share tokens with Sujal outside git → **H5**
 - [ ] Review the paper/slack tables in the V1 draft → **H3**
 - [ ] `LinkExtractor` + `LinkExtractorTest`:
   - Slack `<url|label>` and `<url>` forms
