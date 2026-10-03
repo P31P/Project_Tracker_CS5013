@@ -19,5 +19,7 @@ postgresql
 
 # Test libraries
 spring-boot-starter-test
+spring-boot-starter-webmvc-test
+spring-boot-starter-security-test
 io.zonky.test:embedded-postgres == 2.2.2
 embedded-postgres-binaries-bom  == 16.15.0
