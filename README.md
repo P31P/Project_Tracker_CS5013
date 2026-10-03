@@ -17,6 +17,8 @@ Then open http://localhost:8080.
 ## Configuration
 Settings live in `src/main/resources/application.yml`. Override them with env vars or a local `.env`: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `PORT`.
 
+Sign-in uses Google: set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from a Google Cloud OAuth client (Web application, redirect URI `http://localhost:8080/login/oauth2/code/google`).
+
 ## Docs
 - [PLAN.md](PLAN.md): where the plans are
 - [plans/](plans/): shared phases/handoffs/schema and per-person plans
