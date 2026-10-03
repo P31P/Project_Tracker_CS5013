@@ -4,7 +4,7 @@ Course project for CS5013 : Programming with AI
 A tracker for Raman Lab (DSAI, IIT Madras): it tracks projects and ideas, archives paper links from Slack automatically, and searches across all of them.
 
 ## Status
-Project skeleton in place (Spring Boot, Postgres, CI). No features yet.
+Project skeleton in place (Spring Boot, Postgres, CI). Slack paper-link extraction (`tracker.slack.LinkExtractor`) is written and unit-tested; nothing is wired to Slack yet.
 
 ## Run locally
 Needs Java 21, Maven and PostgreSQL with a `tracker` database (see [SCAFFOLDING.md](SCAFFOLDING.md), Step 0).

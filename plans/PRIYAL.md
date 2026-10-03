@@ -37,16 +37,16 @@ See [SHARED.md](SHARED.md).
 ### Phase 0: Foundations
 
 - [x] Slack app "Pai project slack helper" in Socket Mode; `#scanner_testing` channel with the bot invited
-- [ ] Decide the trigger: only when @mentioned (`app_mentions:read`, `app_mention` event) or every message (`channels:history`, `message.channels`). The proposal expects capture without manual input
-- [ ] Share tokens with Sujal outside git → **H5**
+- [x] Trigger decided: only when @mentioned (`app_mentions:read`, `app_mention` event); the mention message may contain other text
+- [x] Share tokens with Sujal outside git → **H5**
 - [ ] Review the paper/slack tables in the V1 draft → **H3**
-- [ ] `LinkExtractor` + `LinkExtractorTest`:
+- [x] `LinkExtractor` + `LinkExtractorTest`:
   - Slack `<url|label>` and `<url>` forms
   - `arxiv.org/abs/…` and `/pdf/…`, with and without a version suffix
   - `doi.org/…`, DOIs inside Springer/ACM/Wiley URLs, IEEE `document/<id>` URLs
   - plain `.pdf` links
   - GitHub, YouTube, Google Docs and other non-paper links are ignored
-- [ ] URL normalisation (lowercase host, strip tracking params, strip arXiv version, `http`→`https`). The result is stored in `paper.normalized_url`
+- [x] URL normalisation (lowercase host, strip tracking params, strip arXiv version, `http`→`https`). The result is stored in `paper.normalized_url`
 - [ ] Fixtures: messages from the test channel, recorded Crossref/arXiv responses
 
 ### Phase 1: Slack → database → Papers tab
