@@ -14,6 +14,9 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 Then open http://localhost:8080.
 
+## API
+- `GET /api/me`: email and name of the signed-in user
+
 ## Configuration
 Settings live in `src/main/resources/application.yml`. Override them with env vars or a local `.env`: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `PORT`.
 
