@@ -45,6 +45,12 @@ class AllowlistServiceTest extends PostgresTestBase {
     }
 
     @Test
+    void teamMembersAreAllowlistedByMigration() {
+        assertThat(allowlist.isAllowed("da24b026@smail.iitm.ac.in")).isTrue();
+        assertThat(allowlist.isAllowed("cs24b047@smail.iitm.ac.in")).isTrue();
+    }
+
+    @Test
     void missingEmailIsRefused() {
         assertThat(allowlist.isAllowed(null)).isFalse();
     }
