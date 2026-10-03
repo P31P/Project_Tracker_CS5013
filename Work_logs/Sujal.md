@@ -9,3 +9,10 @@
 - Built the project skeleton (H1): Spring Boot 4.1 on Java 21 with Maven, PostgreSQL config, Flyway, a placeholder page and GitHub Actions CI.
 - Tests run against an embedded Postgres 16 (no Docker); `mvn verify` passes and the app starts on `localhost:8080`.
 - Added the MIT License under both our names.
+
+# 3rd October
+
+- First database migration (`V1__init.sql`): `app_user` (unique email, allowlist flag) and `project` (only the title is required, blank titles rejected).
+- JPA entities and repositories for both tables in `tracker.data`.
+- `ConstraintsTest` checks against a real Postgres that a project saves with only a title, a blank title is rejected, and duplicate emails are rejected.
+- Reviewed Priyal's `LinkExtractor` PR (#4); found DOI links with extra path parts (e.g. Springer `/fulltext.html`) being stored as different papers.
