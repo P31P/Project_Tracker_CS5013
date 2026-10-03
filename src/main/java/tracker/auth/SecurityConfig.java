@@ -27,13 +27,15 @@ public class SecurityConfig {
     @Bean
     OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService(AllowlistService allowlist) {
         OidcUserService google = new OidcUserService();
-        return request -> {
-            OidcUser user = google.loadUser(request);
-            if (!allowlist.isAllowed(user.getEmail())) {
-                throw new OAuth2AuthenticationException(
-                        new OAuth2Error("not_allowlisted"), user.getEmail() + " is not on the allowlist");
-            }
-            return user;
-        };
+        return request -> requireAllowlisted(google.loadUser(request), allowlist);
+    }
+
+    // Separate from the bean above so tests can call it without contacting Google
+    static OidcUser requireAllowlisted(OidcUser user, AllowlistService allowlist) {
+        if (!allowlist.isAllowed(user.getEmail())) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error("not_allowlisted"), user.getEmail() + " is not on the allowlist");
+        }
+        return user;
     }
 }
