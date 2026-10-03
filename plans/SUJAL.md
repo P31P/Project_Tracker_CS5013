@@ -39,14 +39,14 @@ See [SHARED.md](SHARED.md).
 
 - [x] **H1:** skeleton from `SCAFFOLDING.md` (scaffold dependencies only), `application.yml`, `ci.yml`
 - [x] Local Postgres: `tracker` database and user; `application-local.yml`
-- [ ] V1 draft for Priyal's review (**H3**)
-- [ ] **H4:** `V1__init.sql` (schema in [SHARED.md](SHARED.md)), entities, enums, repositories; `ConstraintsTest` (a project saves with only a title; a duplicate `(channel_id, message_ts)` is rejected)
-- [ ] **H6** (adds security, OAuth2 client, security-test):
-  - Google OAuth client, redirect `http://localhost:8080/login/oauth2/code/google`
-  - `SecurityConfig`: `/api/**` requires sign-in, static files are public
-  - `AllowlistOidcUserService`, `MeController`
-  - allowlist seeded with both team members
-  - `AllowlistTest`; signed-in MockMvc helper
+- [ ] Slack tables reviewed by Priyal (**H3**, in PR #6)
+- [x] **H4:** migrations `V1__init.sql` (users, projects) and `V2__create_slack_tables.sql` (Slack messages, papers, shares), entities, repositories; `ConstraintsTest`, `SlackTablesTest`
+- [x] **H6:** Google sign-in with an allowlist
+  - Google Cloud OAuth client, redirect `http://localhost:8080/login/oauth2/code/google`
+  - `SecurityConfig`: every page requires sign-in; `requireAllowlisted` refuses anyone not allowlisted
+  - `AllowlistService`, `MeController` (`GET /api/me`)
+  - `V3__allowlist_team.sql` allowlists both team members
+  - `AllowlistServiceTest`, `SecurityConfigTest`, `MeControllerTest`
 
 ### Phase 1: Projects + dashboard
 
