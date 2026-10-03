@@ -54,6 +54,6 @@ Local overrides and secrets go in a git-ignored `.env` file.
 
 - Base package: `tracker`. Create a package when its first class is written.
 - Branches: short topic names, e.g. `scaffold`, `slack-events`, `oauth-allowlist`.
-- Migrations: never edit a merged Flyway file. `V1__init.sql` first, then date-based versions like `V20261017__search_indexes.sql`.
+- Migrations: numbered in order, `V1__init.sql`, `V2__create_slack_tables.sql`, `V3__…`. Take the next number after the highest on `main`; if someone merges that number first, renumber yours before merging. Never edit a merged migration.
 - `paper.normalized_url` comes from `LinkExtractor`: arXiv links become `https://arxiv.org/abs/<id>` (no version) and DOI/Springer/ACM/Wiley/Nature links become `https://doi.org/<lowercase doi>`.
 - Secrets only in env vars / `.env` (git-ignored). Never hardcode tokens, keys or passwords.
