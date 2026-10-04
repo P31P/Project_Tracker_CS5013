@@ -4,7 +4,7 @@ Course project for CS5013 : Programming with AI
 A tracker for Raman Lab (DSAI, IIT Madras): it tracks projects and ideas, archives paper links from Slack automatically, and searches across all of them.
 
 ## Status
-Project skeleton in place (Spring Boot, Postgres, CI). Slack paper-link extraction (`tracker.slack.LinkExtractor`) is written and unit-tested; nothing is wired to Slack yet.
+Google sign-in with an allowlist; database tables for users, projects, Slack messages and papers. Slack paper-link extraction (`tracker.slack.LinkExtractor`) is written and unit-tested; nothing is wired to Slack yet.
 
 ## Run locally
 Needs Java 21, Maven and PostgreSQL with a `tracker` database (see [SCAFFOLDING.md](SCAFFOLDING.md), Step 0).
@@ -14,8 +14,13 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 Then open http://localhost:8080.
 
+## API
+- `GET /api/me`: email and name of the signed-in user
+
 ## Configuration
 Settings live in `src/main/resources/application.yml`. Override them with env vars or a local `.env`: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `PORT`.
+
+Sign-in uses Google: set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from a Google Cloud OAuth client (Web application, redirect URI `http://localhost:8080/login/oauth2/code/google`).
 
 ## Docs
 - [PLAN.md](PLAN.md): where the plans are

@@ -13,7 +13,7 @@ src/main/java/tracker/
     search/     SearchController, SearchService, SearchResult
 src/main/resources/
     prompts/pdf-metadata.txt
-    db/migration/V2026MMDD__*.sql
+    db/migration/V<n>__*.sql
     static/js/papers.js, static/js/search.js
 src/test/java/.../slack/, papers/, search/
 src/test/resources/fixtures/slack/, crossref/, arxiv/, html/, pdf/

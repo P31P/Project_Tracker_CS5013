@@ -18,7 +18,7 @@ Instructions for any AI coding assistant working in this repo.
 
 Context: `Proposal_Doc.pdf`, `Design_Doc.pdf`. Plans: `plans/SHARED.md`, `plans/PRIYAL.md`, `plans/SUJAL.md`. Skeleton guide: `SCAFFOLDING.md`.
 
-**Current stage:** Phase 0, scaffold.
+**Current stage:** end of Phase 0. Schema and Google sign-in are in review; Phase 1 (projects API, dashboard, Slack ingestion) is next.
 
 ## Team & ownership
 
@@ -54,6 +54,9 @@ Local overrides and secrets go in a git-ignored `.env` file.
 
 - Base package: `tracker`. Create a package when its first class is written.
 - Branches: short topic names, e.g. `scaffold`, `slack-events`, `oauth-allowlist`.
-- Migrations: never edit a merged Flyway file. `V1__init.sql` first, then date-based versions like `V20261017__search_indexes.sql`.
+- Migrations: numbered in order, `V1__init.sql`, `V2__create_slack_tables.sql`, `V3__…`. Take the next number after the highest on `main`; if someone merges that number first, renumber yours before merging. Never edit a merged migration.
 - `paper.normalized_url` comes from `LinkExtractor`: arXiv links become `https://arxiv.org/abs/<id>` (no version) and DOI/Springer/ACM/Wiley/Nature links become `https://doi.org/<lowercase doi>`.
+- Entities and repositories live in `tracker.data`. Add repository methods only when a feature needs them.
+- Every page requires Google sign-in (`tracker.auth.SecurityConfig`). Only `app_user` rows with `allowlisted = true` get in; add people with a new migration.
+- Tests that need the database extend `tracker.support.PostgresTestBase`. Tests that need a signed-in user use `oidcLogin()` from spring-security-test.
 - Secrets only in env vars / `.env` (git-ignored). Never hardcode tokens, keys or passwords.
