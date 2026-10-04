@@ -1,6 +1,6 @@
 # Java project: Maven reads libraries from pom.xml. This file is a readable
 # summary, updated in the same PR as each pom.xml change.
-# Stage: Phase 0 scaffold
+# Stage: Phase 0
 
 # Software
 java-jdk        == 21
@@ -13,10 +13,13 @@ spring-boot                     == 4.1.1
 spring-boot-starter-webmvc
 spring-boot-starter-data-jpa
 spring-boot-starter-flyway
+spring-boot-starter-security-oauth2-client
 flyway-database-postgresql
 postgresql
 
 # Test libraries
 spring-boot-starter-test
+spring-boot-starter-webmvc-test
+spring-boot-starter-security-test
 io.zonky.test:embedded-postgres == 2.2.2
 embedded-postgres-binaries-bom  == 16.15.0
