@@ -4,7 +4,7 @@ Course project for CS5013 : Programming with AI
 A tracker for Raman Lab (DSAI, IIT Madras): it tracks projects and ideas, archives paper links from Slack automatically, and searches across all of them.
 
 ## Status
-Google sign-in with an allowlist; database tables for users, projects, Slack messages and papers. Slack paper-link extraction (`tracker.slack.LinkExtractor`) is written and unit-tested; nothing is wired to Slack yet.
+Google sign-in with an allowlist; database tables for users, projects, Slack messages and papers. Slack mentions can now be ingested into the paper archive, and the papers API is available. Paper metadata resolution and the Papers tab UI are still in progress.
 
 ## Run locally
 Needs Java 21, Maven and PostgreSQL with a `tracker` database (see [SCAFFOLDING.md](SCAFFOLDING.md), Step 0).
@@ -16,11 +16,15 @@ Then open http://localhost:8080.
 
 ## API
 - `GET /api/me`: email and name of the signed-in user
+- `GET /api/papers`: list all archived papers (optional `?status=PENDING|RESOLVED|UNRESOLVED`)
+- `GET /api/papers/{id}`: single paper
 
 ## Configuration
 Settings live in `src/main/resources/application.yml`. Override them with env vars or a local `.env`: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `PORT`.
 
 Sign-in uses Google: set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from a Google Cloud OAuth client (Web application, redirect URI `http://localhost:8080/login/oauth2/code/google`).
+
+Slack ingestion (Socket Mode): set `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, `SLACK_APP_TOKEN` and `SLACK_SOCKET_MODE_ENABLED=true`. The app starts without these; omit them in CI.
 
 ## Docs
 - [PLAN.md](PLAN.md): where the plans are

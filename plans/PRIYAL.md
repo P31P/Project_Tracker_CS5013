@@ -51,16 +51,16 @@ See [SHARED.md](SHARED.md).
 
 ### Phase 1: Slack → database → Papers tab
 
-- [ ] `SlackAppConfig` (adds Bolt Jakarta Socket Mode + Tyrus): `App` + `SocketModeApp` started and stopped with Spring; tokens from env
-- [ ] `MessageEventHandler`: skip bot messages and edit/delete subtypes, ack right away, hand off to `IngestionService` via `@Async`
-- [ ] `IngestionService`:
+- [x] `SlackAppConfig` (adds Bolt Jakarta Socket Mode + Tyrus): `App` + `SocketModeApp` started and stopped with Spring; tokens from env
+- [x] `MessageEventHandler`: skip bot messages and edit/delete subtypes, ack right away, hand off to `IngestionService` via `@Async`
+- [x] `IngestionService`:
   - insert `slack_message` with `ON CONFLICT (channel_id, message_ts) DO NOTHING`; if the row already existed, stop (it's a retry)
   - permalink via `chat.getPermalink`
   - for each link: upsert `paper` by `normalized_url` (PENDING), insert `paper_share`
-- [ ] `IngestionReplayTest`: the same event twice gives one message, one paper and one share
+- [x] `IngestionReplayTest`: the same event twice gives one message, one paper and one share
 - [ ] `PaperResolver` + `CrossrefResolver` + `ArxivResolver` (rung 1, adds WireMock for tests)
 - [ ] `PaperResolutionWorker`: `@Scheduled` every 30 s, claims PENDING rows with `FOR UPDATE SKIP LOCKED`, runs the ladder, sets `source`/`status`
-- [ ] `PaperController`: `GET /api/papers?status=`, `GET /api/papers/{id}`
+- [x] `PaperController`: `GET /api/papers?status=`, `GET /api/papers/{id}`
 - [ ] `papers.js`: read-only list with title, authors, poster, date, Slack permalink, and a badge for MODEL/UNRESOLVED
 
 ### Phase 2: Full ladder + search
