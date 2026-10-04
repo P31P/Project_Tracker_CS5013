@@ -12,8 +12,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.springframework.stereotype.Component;
 
 /** Finds paper links in Slack message text and normalises them. Anything that isn't a paper link is ignored. */
+@Component
 public class LinkExtractor {
 
     // Stops at whitespace, '<', '>' and '|', so Slack's <url|label> and <url> forms both yield just the url

@@ -5,8 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.slack.api.RequestConfigurator;
 import com.slack.api.methods.MethodsClient;
-import com.slack.api.methods.request.chat.ChatGetPermalinkRequest;
 import com.slack.api.methods.response.chat.ChatGetPermalinkResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,11 +34,15 @@ class IngestionReplayTest extends PostgresTestBase {
 
     @BeforeEach
     void stubClient() throws Exception {
+        shares.deleteAllInBatch();
+        papers.deleteAllInBatch();
+        messages.deleteAllInBatch();
+
         client = mock(MethodsClient.class);
         ChatGetPermalinkResponse resp = new ChatGetPermalinkResponse();
         resp.setOk(true);
         resp.setPermalink("https://ramanlab.slack.com/archives/C123/p1696412345000100");
-        when(client.chatGetPermalink(any(ChatGetPermalinkRequest.class))).thenReturn(resp);
+        when(client.chatGetPermalink(any(RequestConfigurator.class))).thenReturn(resp);
     }
 
     @Test
