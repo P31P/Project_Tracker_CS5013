@@ -7,7 +7,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
-@SpringBootTest
+// the paper worker would call Crossref and arXiv for real, so it is off unless a test turns it on
+@SpringBootTest(properties = "papers.resolution-enabled=false")
 public abstract class PostgresTestBase {
 
     private static final EmbeddedPostgres POSTGRES = start();

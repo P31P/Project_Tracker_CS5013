@@ -59,7 +59,7 @@ See [SHARED.md](SHARED.md).
   - for each link: upsert `paper` by `normalized_url` (PENDING), insert `paper_share`
 - [x] `IngestionReplayTest`: the same event twice gives one message, one paper and one share
 - [x] `PaperResolver` + `CrossrefResolver` + `ArxivResolver` (rung 1, adds WireMock for tests)
-- [ ] `PaperResolutionWorker`: `@Scheduled` every 30 s, claims PENDING rows with `FOR UPDATE SKIP LOCKED`, runs the ladder, sets `source`/`status`
+- [x] `PaperResolutionWorker`: `@Scheduled` every 30 s, claims PENDING rows with `FOR UPDATE SKIP LOCKED`, runs the ladder, sets `source`/`status`
 - [x] `PaperController`: `GET /api/papers?status=`, `GET /api/papers/{id}`
 - [ ] `papers.js`: read-only list with title, authors, poster, date, Slack permalink, and a badge for MODEL/UNRESOLVED
 
@@ -69,7 +69,7 @@ See [SHARED.md](SHARED.md).
 - [ ] `MetaTagResolver` (rung 2, adds Jsoup): real User-Agent, 10 s timeout, follow redirects; read `citation_title`, `citation_author`, `citation_doi`, `citation_publication_date`; if a DOI is found, send it back through rung 1
 - [ ] `PdfLlmResolver` (rung 3, adds PDFBox): size cap (~20 MB), text from the first 2 pages, `LlmClient` + `prompts/pdf-metadata.txt`, `source = MODEL`
 - [ ] References: store Crossref's `reference` array in `paper_reference` when present; otherwise the UI says "references not available"
-- [ ] Retry: an `attempts` column; after 3 failures the paper is marked UNRESOLVED. Nothing is ever deleted
+- [x] Retry: an `attempts` column; after 3 failures the paper is marked UNRESOLVED. Nothing is ever deleted
 - [ ] `ResolutionLadderTest`: known DOI → exact registry data; meta-tag page → `META_TAGS`; bare PDF → `MODEL`; dead link → `UNRESOLVED`
 - [ ] Search migration: generated `tsvector` columns + GIN indexes on `project`, `idea`, `paper` → **H10**
 - [ ] `SearchService`: `websearch_to_tsquery`, `ts_rank`, `UNION ALL` across the three tables, `type` filter, top 50

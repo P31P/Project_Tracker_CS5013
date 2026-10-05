@@ -28,3 +28,6 @@ slack:
   signing-secret: ${SLACK_SIGNING_SECRET:}
   app-token: ${SLACK_APP_TOKEN:}
   socket-mode-enabled: ${SLACK_SOCKET_MODE_ENABLED:false}
+
+papers:
+  resolution-enabled: ${PAPER_RESOLUTION_ENABLED:true}

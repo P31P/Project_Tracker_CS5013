@@ -23,3 +23,9 @@
 - Each returns the details or "not found". Network failures are passed up so the later worker can retry instead of marking the paper unresolved.
 - Tests run against a fake server (WireMock) using responses recorded from the real Crossref and arXiv APIs, including a DOI that doesn't exist, an arXiv ID that doesn't exist and a badly formed arXiv ID.
 - Not wired in yet: the worker that runs them on pending papers and stores the results is the next branch.
+
+- Added the worker that fills in papers. Every 30 seconds it takes one waiting paper at a time, looks it up with the Crossref or arXiv resolver, and saves the title, authors, date and DOI. Papers the sources don't know become UNRESOLVED.
+- If a source is down, the paper stays pending and is retried; after 3 failed tries it becomes UNRESOLVED. A paper that keeps failing goes to the back of the queue so it doesn't hold up newer ones.
+- New migration `V4__add_paper_metadata.sql` adds the title, authors, date, DOI, source and attempts columns. The papers API now returns these too.
+- The worker is switched off in tests so they never call the real websites (`PAPER_RESOLUTION_ENABLED=false` does the same locally).
+- Checked once against the live services: an arXiv link and a Springer DOI were resolved, and a made-up DOI and a plain website link became UNRESOLVED.

@@ -4,7 +4,7 @@ Course project for CS5013 : Programming with AI
 A tracker for Raman Lab (DSAI, IIT Madras): it tracks projects and ideas, archives paper links from Slack automatically, and searches across all of them.
 
 ## Status
-Google sign-in with an allowlist; database tables for users, projects, Slack messages and papers. Slack mentions can now be ingested into the paper archive, and the papers API is available. Crossref and arXiv resolvers can look up a paper's title, authors and date; they are not yet run automatically, and the Papers tab UI is still in progress.
+Google sign-in with an allowlist; database tables for users, projects, Slack messages and papers. Slack mentions can now be ingested into the paper archive, and the papers API is available. A background worker fills in each new paper's title, authors and date from Crossref (DOI links) and arXiv. The Papers tab UI is still in progress.
 
 ## Run locally
 Needs Java 21, Maven and PostgreSQL with a `tracker` database (see [SCAFFOLDING.md](SCAFFOLDING.md), Step 0).
@@ -20,7 +20,7 @@ Then open http://localhost:8080.
 - `GET /api/papers/{id}`: single paper
 
 ## Configuration
-Settings live in `src/main/resources/application.yml`. Override them with env vars or a local `.env`: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `PORT`.
+Settings live in `src/main/resources/application.yml`. Override them with env vars or a local `.env`: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `PORT`, `PAPER_RESOLUTION_ENABLED` (default `true`; set `false` to stop the worker calling Crossref and arXiv).
 
 Sign-in uses Google: set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from a Google Cloud OAuth client (Web application, redirect URI `http://localhost:8080/login/oauth2/code/google`).
 
