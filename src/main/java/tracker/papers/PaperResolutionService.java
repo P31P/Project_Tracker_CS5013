@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tracker.data.Paper;
 import tracker.data.PaperRepository;
-import tracker.data.PaperSource;
 import tracker.papers.resolver.PaperResolver;
 import tracker.papers.resolver.ResolvedMetadata;
 
@@ -45,8 +44,7 @@ public class PaperResolutionService {
             Optional<ResolvedMetadata> found = lookup(paper.getNormalizedUrl());
             if (found.isPresent()) {
                 ResolvedMetadata meta = found.get();
-                paper.markResolved(meta.title(), meta.authors(), meta.publishedOn(), meta.doi(),
-                        PaperSource.REGISTRY);
+                paper.markResolved(meta.title(), meta.authors(), meta.publishedOn(), meta.doi(), meta.source());
             } else {
                 paper.markUnresolved();
             }

@@ -66,7 +66,7 @@ See [SHARED.md](SHARED.md).
 ### Phase 2: Full ladder + search
 
 - [ ] If Slack events aren't arriving reliably, build `SlackPoller`: `@Scheduled` `conversations.history` with `oldest=<last ts>` per channel, a cursor table, feeding the same `IngestionService`. It's turned on by a config flag
-- [ ] `MetaTagResolver` (rung 2, adds Jsoup): real User-Agent, 10 s timeout, follow redirects; read `citation_title`, `citation_author`, `citation_doi`, `citation_publication_date`; if a DOI is found, send it back through rung 1
+- [x] `MetaTagResolver` (rung 2, adds Jsoup): real User-Agent, 10 s timeout, follow redirects; read `citation_title`, `citation_author`, `citation_doi`, `citation_publication_date`; if a DOI is found, send it back through rung 1
 - [ ] `PdfLlmResolver` (rung 3, adds PDFBox): size cap (~20 MB), text from the first 2 pages, `LlmClient` + `prompts/pdf-metadata.txt`, `source = MODEL`
 - [ ] References: store Crossref's `reference` array in `paper_reference` when present; otherwise the UI says "references not available"
 - [x] Retry: an `attempts` column and a growing delay (`next_attempt_at`) between tries; after 3 failures the paper is marked UNRESOLVED. Nothing is ever deleted

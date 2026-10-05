@@ -2,5 +2,6 @@ package tracker.data;
 
 /** Where a paper's details came from. */
 public enum PaperSource {
-    REGISTRY
+    REGISTRY,
+    META_TAGS
 }

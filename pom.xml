@@ -101,6 +101,13 @@
             <artifactId>tyrus-standalone-client</artifactId>
             <version>2.2.0</version>
         </dependency>
+
+        <!-- reads citation meta tags from publisher pages -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.23.2</version>
+        </dependency>
     </dependencies>
 
     <build>

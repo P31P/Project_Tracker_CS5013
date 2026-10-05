@@ -29,3 +29,10 @@
 - New migration `V4__add_paper_metadata.sql` adds the title, authors, date, DOI, source and attempts columns. The papers API now returns these too.
 - The worker is switched off in tests so they never call the real websites (`PAPER_RESOLUTION_ENABLED=false` does the same locally).
 - Checked once against the live services: an arXiv link and a Springer DOI were resolved, and a made-up DOI and a plain website link became UNRESOLVED.
+
+# 7th October
+
+- Added the second way of finding paper details: reading the citation tags that publishers put on their article pages (title, authors, date, DOI). It is tried only when Crossref and arXiv don't know the link.
+- If the page names a DOI, Crossref is asked for it so the official record is used instead of the page's version. Authors written as "Last, First" are flipped to match the other sources.
+- Each paper now records which route found it (registry or page tags). Bare PDF links, pages that refuse access and pages without citation tags are left for the next step.
+- Tested with fixtures trimmed from the real Springer and Nature pages. Checked live: a Nature link, an arXiv-registered DOI and an arXiv link resolved. A bare PDF and an IEEE link stayed UNRESOLVED, because IEEE sends an empty reply to anything that isn't a browser.
