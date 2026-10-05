@@ -11,11 +11,13 @@ import com.slack.api.methods.response.chat.ChatGetPermalinkResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import tracker.data.PaperRepository;
 import tracker.data.PaperShareRepository;
 import tracker.data.SlackMessageRepository;
 import tracker.support.PostgresTestBase;
 
+@Transactional
 class IngestionReplayTest extends PostgresTestBase {
 
     @Autowired
@@ -34,10 +36,6 @@ class IngestionReplayTest extends PostgresTestBase {
 
     @BeforeEach
     void stubClient() throws Exception {
-        shares.deleteAllInBatch();
-        papers.deleteAllInBatch();
-        messages.deleteAllInBatch();
-
         client = mock(MethodsClient.class);
         ChatGetPermalinkResponse resp = new ChatGetPermalinkResponse();
         resp.setOk(true);

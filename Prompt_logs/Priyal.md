@@ -31,3 +31,19 @@ Add tests for ingestion replay, a message without paper links, and a message wit
 ## 8. Update project documentation and review
 
 Update the README with the new papers endpoints and Slack environment variables. Add a short human-readable work-log entry and record the prompts used for this handoff. Review the final diff for unrelated changes and summarize the files changed, tests added, and any verification that was or was not run. Do not claim tests passed unless they were actually executed.
+
+# Priyal - prompts for the PR #10 review fixes
+
+## 9. Fix a flaky test reported in review
+
+PR #10 (branch `slack_integration`) has a review comment from Sujal: `SlackTablesTest.duplicatePaperUrlIsRejected` sometimes fails with `duplicate key value violates unique constraint "paper_normalized_url_key"` for `https://arxiv.org/abs/1706.03762`. The review says `IngestionReplayTest` is not `@Transactional`, so its papers stay in the shared embedded Postgres and collide with the same link in `SlackTablesTest` when it runs first.
+
+Confirm that diagnosis by reading both tests, `PostgresTestBase` and `IngestionService`. Then fix it the way the other database tests already do (`@Transactional`), and remove any manual clean-up the annotation makes redundant. Keep the change inside the test files.
+
+## 10. Check for the same problem elsewhere
+
+Look at every other test that touches the database or the Slack tables and say whether it can leak rows into other tests. Fix only real leaks. Then run `mvn verify` once with `-Dsurefire.runOrder=reversealphabetical` so the order that failed is exercised, and report the number of tests that passed. Do not claim a pass unless the command was run.
+
+## 11. Record the convention and the work
+
+Add one line to the Testing conventions in `CLAUDE.md` saying database tests must be `@Transactional` because all tests share one database. Add a short work-log entry for today in `Work_logs/Priyal.md`. Add the prompts used here to `Prompt_logs/Priyal.md` as cleaned-up versions: each with the context, the goal, the constraints and how to check the result. Do not stage, commit or push. Finish by listing the git commands I should run to update PR #10.
