@@ -16,3 +16,10 @@
 - Fixed a flaky test found in review of PR #10. `IngestionReplayTest` saved papers and never rolled them back, so `SlackTablesTest.duplicatePaperUrlIsRejected` sometimes failed on a duplicate arXiv link when it ran second. The test is now `@Transactional` and the manual clean-up is removed.
 - Checked the other database tests: they are `@Transactional` or use mocks, so nothing else leaked. Ran the suite in reverse order to confirm (45 tests pass).
 - Added a line to `CLAUDE.md`: database tests must be `@Transactional` because all tests share one database.
+
+# 6th October
+
+- Started the paper resolvers (first step of filling in a paper's title, authors and date). `CrossrefResolver` handles DOI links and `ArxivResolver` handles arXiv links.
+- Each returns the details or "not found". Network failures are passed up so the later worker can retry instead of marking the paper unresolved.
+- Tests run against a fake server (WireMock) using responses recorded from the real Crossref and arXiv APIs, including a DOI that doesn't exist, an arXiv ID that doesn't exist and a badly formed arXiv ID.
+- Not wired in yet: the worker that runs them on pending papers and stores the results is the next branch.
