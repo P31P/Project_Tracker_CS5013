@@ -3,6 +3,8 @@ package tracker.slack;
 import com.slack.api.methods.MethodsClient;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.methods.response.chat.ChatGetPermalinkResponse;
+import com.slack.api.methods.response.users.UsersInfoResponse;
+import com.slack.api.model.User;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.scheduling.annotation.Async;
@@ -64,6 +66,18 @@ public class IngestionService {
             }
         } catch (SlackApiException | IOException e) {
             // permalink is optional; carry on
+        }
+
+        try {
+            UsersInfoResponse resp = client.usersInfo(r -> r.user(userId));
+            if (resp.isOk() && resp.getUser() != null) {
+                User user = resp.getUser();
+                boolean hasRealName = user.getRealName() != null && !user.getRealName().isBlank();
+                message.setSlackUserName(hasRealName ? user.getRealName() : user.getName());
+                messages.save(message);
+            }
+        } catch (SlackApiException | IOException e) {
+            // the poster's name is optional (needs the users:read scope); carry on
         }
 
         List<PaperLink> links = extractor.extract(text);

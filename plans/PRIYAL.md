@@ -61,7 +61,7 @@ See [SHARED.md](SHARED.md).
 - [x] `PaperResolver` + `CrossrefResolver` + `ArxivResolver` (rung 1, adds WireMock for tests)
 - [x] `PaperResolutionWorker`: `@Scheduled` every 30 s, claims PENDING rows with `FOR UPDATE SKIP LOCKED`, runs the ladder, sets `source`/`status`
 - [x] `PaperController`: `GET /api/papers?status=`, `GET /api/papers/{id}`
-- [ ] `papers.js`: read-only list with title, authors, poster, date, Slack permalink, and a badge for MODEL/UNRESOLVED
+- [x] `papers.js`: read-only list with title, authors, poster, date, Slack permalink, and a badge for MODEL/UNRESOLVED
 
 ### Phase 2: Full ladder + search
 

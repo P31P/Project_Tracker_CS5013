@@ -41,3 +41,7 @@
 
 - Ran the Slack flow for real for the first time: installed PostgreSQL locally, filled in `.env`, started the app and mentioned the bot in `#scanner_testing` with an arXiv link and a Springer DOI. Both messages were saved with their Slack links and both papers were resolved within a minute, with titles, authors and dates.
 - Not yet tried in a browser: `/api/papers` needs Google sign-in, which needs Sujal's real Google credentials.
+
+- Built the Papers tab as a standalone page module (`papers.js` with `renderPapers(container)` and its own stylesheet): newest first, with title, authors, year, who shared it and when, a link to the Slack message, and badges for papers still being looked up, not found, or guessed by AI. It re-checks every 10 s while any paper is still being looked up.
+- The papers API now also returns who first shared a paper, when, and the Slack link. The poster's name is looked up when a message arrives (needs the `users:read` Slack scope; without it the name is just left out).
+- Checked the page in a browser with made-up data (including a title containing HTML, which shows as plain text) and at narrow width. It is not hooked into the dashboard yet because Sujal's shell hasn't landed; that is a one-line change once it does.
