@@ -24,7 +24,7 @@ Settings live in `src/main/resources/application.yml`. Override them with env va
 
 Sign-in uses Google: set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from a Google Cloud OAuth client (Web application, redirect URI `http://localhost:8080/login/oauth2/code/google`).
 
-Slack ingestion (Socket Mode): set `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, `SLACK_APP_TOKEN` and `SLACK_SOCKET_MODE_ENABLED=true`. The app starts without these; omit them in CI. If Slack can't connect (bad token, outage), the error is logged and the rest of the app keeps running.
+Slack ingestion (Socket Mode): set `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, `SLACK_APP_TOKEN` and `SLACK_SOCKET_MODE_ENABLED=true`. The app starts without these; omit them in CI. If Slack can't connect (bad token, outage), the error is logged and the rest of the app keeps running. To try it, start the app, mention the bot with a paper link in the channel, and check `GET /api/papers` (or the `paper` table): within about 30 s the paper has its title and authors. The app needs `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to start; any placeholder value works if you only test Slack and read the database.
 
 ## Docs
 - [PLAN.md](PLAN.md): where the plans are

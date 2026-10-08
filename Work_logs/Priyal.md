@@ -36,3 +36,8 @@
 - If the page names a DOI, Crossref is asked for it so the official record is used instead of the page's version. Authors written as "Last, First" are flipped to match the other sources.
 - Each paper now records which route found it (registry or page tags). Bare PDF links, pages that refuse access and pages without citation tags are left for the next step.
 - Tested with fixtures trimmed from the real Springer and Nature pages. Checked live: a Nature link, an arXiv-registered DOI and an arXiv link resolved. A bare PDF and an IEEE link stayed UNRESOLVED, because IEEE sends an empty reply to anything that isn't a browser.
+
+# 8th October
+
+- Ran the Slack flow for real for the first time: installed PostgreSQL locally, filled in `.env`, started the app and mentioned the bot in `#scanner_testing` with an arXiv link and a Springer DOI. Both messages were saved with their Slack links and both papers were resolved within a minute, with titles, authors and dates.
+- Not yet tried in a browser: `/api/papers` needs Google sign-in, which needs Sujal's real Google credentials.

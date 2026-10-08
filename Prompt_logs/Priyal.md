@@ -89,3 +89,7 @@ Add `MetaTagResolver` (Jsoup, 10 s timeout, follows redirects, browser-style Use
 ## 21. Test with recorded pages, then check live
 
 Record the citation meta tags of a real Springer and a real Nature page into `src/test/resources/fixtures/html/`. Test with WireMock: tags read correctly, the Crossref upgrade, no `citation_title`, a bare PDF, a 403 and a 503. Then run a throwaway check against real links (an arXiv link, an arXiv-registered DOI, a Nature page, an IEEE page, a bare PDF, a fake DOI), delete it, and tell me what each ended up as and any limits you saw. Report real test counts. Do not stage, commit or push.
+
+## 22. Run the real Slack flow once
+
+The Slack code and the paper worker are merged into my branch but have only been tested with stubs. I want to see it work for real in `#scanner_testing`. Check what is missing on this machine (database, `.env`) without printing any secrets, tell me exactly what I have to set up and where each value comes from, then start the app and watch the logs while I post a mention with an arXiv link and a DOI. Afterwards read the database and tell me what was saved and what is still untested. Do not change code or commit anything.
