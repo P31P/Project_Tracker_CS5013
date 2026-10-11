@@ -3,6 +3,8 @@ package tracker.slack;
 import com.slack.api.bolt.App;
 import com.slack.api.bolt.AppConfig;
 import com.slack.api.bolt.jakarta_socket_mode.SocketModeApp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.SmartLifecycle;
@@ -12,6 +14,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty(name = "slack.socket-mode-enabled", havingValue = "true")
 public class SlackAppConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(SlackAppConfig.class);
 
     @Bean
     App slackApp(
@@ -38,7 +42,8 @@ public class SlackAppConfig {
                     socketModeApp.startAsync();
                     running = true;
                 } catch (Exception e) {
-                    throw new RuntimeException("Failed to start Socket Mode", e);
+                    // a Slack problem should pause paper capture, not stop the whole tracker
+                    log.error("Slack ingestion disabled: {}", e.getMessage());
                 }
             }
 
