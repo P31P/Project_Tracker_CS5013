@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tracker.data.Paper;
 import tracker.data.PaperRepository;
+import tracker.data.PaperSource;
 import tracker.data.PaperStatus;
 import tracker.support.PostgresTestBase;
 
@@ -37,6 +39,22 @@ class PaperControllerTest extends PostgresTestBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].normalizedUrl").value("https://arxiv.org/abs/1706.03762"))
                 .andExpect(jsonPath("$[0].status").value("PENDING"));
+    }
+
+    @Test
+    void resolvedPaperShowsItsDetails() throws Exception {
+        Paper paper = makePaper(4L, "https://arxiv.org/abs/1706.03762", PaperStatus.PENDING);
+        paper.markResolved("Attention Is All You Need", List.of("Ashish Vaswani", "Noam Shazeer"),
+                LocalDate.of(2017, 6, 12), null, PaperSource.REGISTRY);
+        when(papers.findById(4L)).thenReturn(Optional.of(paper));
+
+        mvc.perform(get("/api/papers/4").with(oidcLogin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("RESOLVED"))
+                .andExpect(jsonPath("$.title").value("Attention Is All You Need"))
+                .andExpect(jsonPath("$.authors[1]").value("Noam Shazeer"))
+                .andExpect(jsonPath("$.publishedOn").value("2017-06-12"))
+                .andExpect(jsonPath("$.source").value("REGISTRY"));
     }
 
     @Test

@@ -65,3 +65,15 @@ Record real responses from `api.crossref.org` and `export.arxiv.org` into `src/t
 ## 15. Record the work
 
 Update the README status line, tick the resolver item in `plans/PRIYAL.md`, and add a work-log entry and these prompts to the logs. Do not stage, commit or push; list the git commands to create the branch and open the PR.
+
+## 16. Plan the worker branch
+
+The resolvers PR is open and stacked on #10. Start a new branch from it for the worker only: a scheduled job that takes PENDING papers, runs the resolvers and saves the result. Before writing code, list the schema changes, how a paper is claimed so two instances can't take the same row, and what happens when a resolver throws, so a permanently failing paper cannot starve newer ones. Keep the Phase 2 rungs (meta tags, PDF, LLM) out of it.
+
+## 17. Build the worker
+
+Add migration `V4` for `paper.title`, `authors`, `published_on`, `doi`, `source` and `attempts`, update the `Paper` entity and `PaperDto`, and add `PaperResolutionService` (one paper per transaction, claimed with `FOR UPDATE SKIP LOCKED`) and `PaperResolutionWorker` (`@Scheduled`, up to 10 papers per run). A resolver returning empty or no resolver supporting the URL gives UNRESOLVED. An exception keeps the paper PENDING and counts an attempt, becoming UNRESOLVED on the third. The worker must be off in tests so they never reach Crossref or arXiv; add a `papers.resolution-enabled` setting for that.
+
+## 18. Test and verify
+
+Test the service against the embedded Postgres with a mocked resolver: resolved, not found, unsupported link, three failures, a failing paper not blocking a newer one, and nothing pending. Read back from the database rather than the cached entity. Add a test that the worker calls the service on a schedule, and one for the new API fields. Then run a throwaway check against the real Crossref and arXiv APIs, delete it, and report the real test counts from `mvn verify`.

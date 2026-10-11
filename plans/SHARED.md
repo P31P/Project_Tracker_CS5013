@@ -36,6 +36,7 @@ What both of you depend on. Individual tasks are in [PRIYAL.md](PRIYAL.md) and [
 | `project` | title **NOT NULL** and not blank, description, status, owner_id, created_at | V1 |
 | `slack_message` | channel_id, message_ts, slack_user_id, slack_user_name, text, permalink, received_at, **UNIQUE(channel_id, message_ts)** | V2 |
 | `paper` | normalized_url UNIQUE, status (`PENDING`/`RESOLVED`/`UNRESOLVED`), created_at | V2 |
+| `paper` (added) | title, authors, published_on, doi, source, attempts, next_attempt_at | V4 |
 | `paper_share` | paper_id, slack_message_id, posted_url, **UNIQUE(paper_id, slack_message_id)** | V2 |
 
 ### Planned (added by the feature that needs it)
@@ -44,4 +45,4 @@ What both of you depend on. Individual tasks are in [PRIYAL.md](PRIYAL.md) and [
 |---|---|
 | `project_update` | project timeline |
 | `idea` | idea logging |
-| `paper.title`, `paper.authors`, `paper_reference` | paper resolver |
+| `paper_reference` | paper resolver |
