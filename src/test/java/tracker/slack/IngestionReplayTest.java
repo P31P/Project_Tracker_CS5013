@@ -8,6 +8,9 @@ import static org.mockito.Mockito.when;
 import com.slack.api.RequestConfigurator;
 import com.slack.api.methods.MethodsClient;
 import com.slack.api.methods.response.chat.ChatGetPermalinkResponse;
+import com.slack.api.methods.response.users.UsersInfoResponse;
+import com.slack.api.model.User;
+import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +44,14 @@ class IngestionReplayTest extends PostgresTestBase {
         resp.setOk(true);
         resp.setPermalink("https://ramanlab.slack.com/archives/C123/p1696412345000100");
         when(client.chatGetPermalink(any(RequestConfigurator.class))).thenReturn(resp);
+
+        UsersInfoResponse userResp = new UsersInfoResponse();
+        userResp.setOk(true);
+        User user = new User();
+        user.setName("priyal");
+        user.setRealName("Priyal Patel");
+        userResp.setUser(user);
+        when(client.usersInfo(any(RequestConfigurator.class))).thenReturn(userResp);
     }
 
     @Test
@@ -55,6 +66,26 @@ class IngestionReplayTest extends PostgresTestBase {
 
         assertThat(messages.count()).isEqualTo(1);
         assertThat(papers.count()).isEqualTo(1);
+        assertThat(shares.count()).isEqualTo(1);
+    }
+
+    @Test
+    void posterNameIsStoredWhenSlackKnowsIt() {
+        ingestion.ingest("C123", "1696412345.000400", "U123", "<@UBOT> hi", client);
+
+        assertThat(messages.findByChannelIdAndMessageTs("C123", "1696412345.000400").orElseThrow()
+                .getSlackUserName()).isEqualTo("Priyal Patel");
+    }
+
+    @Test
+    void ingestionContinuesWhenTheNameLookupFails() throws Exception {
+        when(client.usersInfo(any(RequestConfigurator.class))).thenThrow(new IOException("no scope"));
+
+        ingestion.ingest("C123", "1696412345.000500", "U123",
+                "<@UBOT> <https://arxiv.org/abs/1706.03762|A>", client);
+
+        assertThat(messages.findByChannelIdAndMessageTs("C123", "1696412345.000500").orElseThrow()
+                .getSlackUserName()).isNull();
         assertThat(shares.count()).isEqualTo(1);
     }
 

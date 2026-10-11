@@ -93,3 +93,15 @@ Record the citation meta tags of a real Springer and a real Nature page into `sr
 ## 22. Run the real Slack flow once
 
 The Slack code and the paper worker are merged into my branch but have only been tested with stubs. I want to see it work for real in `#scanner_testing`. Check what is missing on this machine (database, `.env`) without printing any secrets, tell me exactly what I have to set up and where each value comes from, then start the app and watch the logs while I post a mention with an arXiv link and a DOI. Afterwards read the database and tell me what was saved and what is still untested. Do not change code or commit anything.
+
+## 23. Plan the Papers tab without the dashboard shell
+
+Sujal's shell (`index.html`, `app.js` with `registerTab`) isn't on `main`, so build the tab so it doesn't depend on it: `static/js/papers.js` as an ES module exporting `renderPapers(container)`, loading its own stylesheet, so hooking it up later is one line in `app.js`. Plain JS, no libraries. List what each paper row shows (title or URL, authors, year, who shared it and when, a Slack link, badges for PENDING, UNRESOLVED and `source=MODEL`) and say which data the API doesn't return yet. Branch from the meta-tag branch and don't touch Sujal's files.
+
+## 24. Add the Slack fields to the API and the tab
+
+Return, for the first share of each paper, the poster's name, the time and the Slack permalink in `PaperDto`, fetched in one query for the whole list (no query per paper). Look up the poster's name when a message is ingested, tolerating failure like the permalink does, and tell me which Slack scope that needs. Write `papers.js` using only DOM calls and `textContent` (titles come from outside websites), ignore any link that isn't http(s), and re-check every 10 s while a paper is still PENDING. Test the API against the real Postgres, including no papers and a paper with no share.
+
+## 25. Check how it looks
+
+I can't run the app without Google sign-in, so serve the static files with a throwaway local server and a stub `/api/papers` (keep it outside the repo), and screenshot the page in headless Edge: a normal list, an empty list, a narrow window, and a title containing HTML to prove it is shown as text. Fix anything that overflows. Report real test counts and say what is not covered (there are no JS tests because the project has no Node).
