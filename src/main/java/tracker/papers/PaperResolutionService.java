@@ -1,5 +1,6 @@
 package tracker.papers;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import tracker.papers.resolver.ResolvedMetadata;
 public class PaperResolutionService {
 
     static final int MAX_ATTEMPTS = 3;
+    static final Duration RETRY_DELAY = Duration.ofMinutes(10);
 
     private static final Logger log = LoggerFactory.getLogger(PaperResolutionService.class);
 
@@ -51,7 +53,7 @@ public class PaperResolutionService {
         } catch (RuntimeException e) {
             // network or server trouble: stay pending and try again later, but not forever
             log.warn("Could not resolve {}: {}", paper.getNormalizedUrl(), e.toString());
-            paper.recordFailedAttempt();
+            paper.recordFailedAttempt(RETRY_DELAY);
             if (paper.getAttempts() >= MAX_ATTEMPTS) {
                 paper.markUnresolved();
             }

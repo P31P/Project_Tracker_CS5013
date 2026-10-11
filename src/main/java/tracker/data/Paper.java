@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -46,6 +47,9 @@ public class Paper {
 
     @Column(nullable = false)
     private int attempts;
+
+    @Column(name = "next_attempt_at")
+    private OffsetDateTime nextAttemptAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -98,6 +102,10 @@ public class Paper {
         return attempts;
     }
 
+    public OffsetDateTime getNextAttemptAt() {
+        return nextAttemptAt;
+    }
+
     public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
@@ -116,7 +124,8 @@ public class Paper {
         this.status = PaperStatus.UNRESOLVED;
     }
 
-    public void recordFailedAttempt() {
+    public void recordFailedAttempt(Duration delayPerAttempt) {
         this.attempts++;
+        this.nextAttemptAt = OffsetDateTime.now().plus(delayPerAttempt.multipliedBy(attempts));
     }
 }

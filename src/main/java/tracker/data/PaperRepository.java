@@ -12,7 +12,8 @@ public interface PaperRepository extends JpaRepository<Paper, Long> {
     List<Paper> findByStatus(PaperStatus status);
 
     // papers that failed before go to the back; SKIP LOCKED lets two app instances never claim the same row
-    @Query(value = "SELECT * FROM paper WHERE status = 'PENDING' ORDER BY attempts, id LIMIT 1 "
-            + "FOR UPDATE SKIP LOCKED", nativeQuery = true)
+    @Query(value = "SELECT * FROM paper WHERE status = 'PENDING' "
+            + "AND (next_attempt_at IS NULL OR next_attempt_at <= now()) "
+            + "ORDER BY attempts, id LIMIT 1 FOR UPDATE SKIP LOCKED", nativeQuery = true)
     Optional<Paper> claimNextPending();
 }

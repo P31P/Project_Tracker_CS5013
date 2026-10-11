@@ -85,12 +85,36 @@ class PaperResolutionServiceTest extends PostgresTestBase {
         when(resolver.resolve(URL)).thenThrow(new IllegalStateException("503"));
 
         service.resolveNext();
+        retryDelayPasses();
         service.resolveNext();
         assertThat(reload(paper).getStatus()).isEqualTo(PaperStatus.PENDING);
         assertThat(reload(paper).getAttempts()).isEqualTo(2);
 
+        retryDelayPasses();
         service.resolveNext();
         assertThat(reload(paper).getStatus()).isEqualTo(PaperStatus.UNRESOLVED);
+    }
+
+    @Test
+    void failedPaperWaitsBeforeItIsTriedAgain() {
+        papers.saveAndFlush(new Paper(URL));
+        when(resolver.resolve(URL)).thenThrow(new IllegalStateException("503"));
+
+        service.resolveNext();
+
+        assertThat(service.resolveNext()).isFalse();
+    }
+
+    @Test
+    void oneWorkerRunDoesNotUseUpAllAttempts() {
+        Paper paper = papers.saveAndFlush(new Paper(URL));
+        when(resolver.resolve(URL)).thenThrow(new IllegalStateException("503"));
+
+        new PaperResolutionWorker(service).resolvePending();
+
+        Paper saved = reload(paper);
+        assertThat(saved.getStatus()).isEqualTo(PaperStatus.PENDING);
+        assertThat(saved.getAttempts()).isEqualTo(1);
     }
 
     @Test
@@ -113,6 +137,12 @@ class PaperResolutionServiceTest extends PostgresTestBase {
         papers.saveAndFlush(paper);
 
         assertThat(service.resolveNext()).isFalse();
+    }
+
+    private void retryDelayPasses() {
+        papers.flush();
+        entityManager.createNativeQuery("UPDATE paper SET next_attempt_at = NULL").executeUpdate();
+        entityManager.clear();
     }
 
     private Paper reload(Paper paper) {

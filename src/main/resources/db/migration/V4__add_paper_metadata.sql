@@ -4,4 +4,5 @@ ALTER TABLE paper
     ADD COLUMN published_on DATE,
     ADD COLUMN doi          TEXT,
     ADD COLUMN source       TEXT,
-    ADD COLUMN attempts     INT NOT NULL DEFAULT 0;
+    ADD COLUMN attempts        INT NOT NULL DEFAULT 0,
+    ADD COLUMN next_attempt_at TIMESTAMPTZ;
