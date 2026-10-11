@@ -60,4 +60,5 @@ Local overrides and secrets go in a git-ignored `.env` file.
 - Every page requires Google sign-in (`tracker.auth.SecurityConfig`). Only `app_user` rows with `allowlisted = true` get in; add people with a new migration.
 - Tests that need the database extend `tracker.support.PostgresTestBase` and are `@Transactional`, so they roll back. All tests share one database; a test that commits leaks rows into the others. Tests that need a signed-in user use `oidcLogin()` from spring-security-test.
 - A scheduled worker resolves PENDING papers (`tracker.papers.PaperResolutionWorker`). It is off in tests (`PostgresTestBase`); a test that needs it turns it on with `papers.resolution-enabled=true`.
+- Paper resolvers are `PaperResolver` beans tried in `@Order`: Crossref, arXiv, then page meta tags. A new rung is a new bean with the next `@Order`.
 - Secrets only in env vars / `.env` (git-ignored). Never hardcode tokens, keys or passwords.

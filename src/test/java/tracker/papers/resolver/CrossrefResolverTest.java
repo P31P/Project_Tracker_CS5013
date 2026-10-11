@@ -13,6 +13,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tracker.data.PaperSource;
 import tracker.support.Fixtures;
 
 class CrossrefResolverTest {
@@ -53,6 +54,7 @@ class CrossrefResolverTest {
         assertThat(paper.authors()).startsWith("Olga Russakovsky", "Jia Deng");
         assertThat(paper.publishedOn()).isEqualTo(LocalDate.of(2015, 4, 11));
         assertThat(paper.doi()).isEqualTo("10.1007/s11263-015-0816-y");
+        assertThat(paper.source()).isEqualTo(PaperSource.REGISTRY);
     }
 
     @Test

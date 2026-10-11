@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tracker.data.PaperSource;
 import tracker.support.Fixtures;
 
 class ArxivResolverTest {
@@ -47,6 +48,7 @@ class ArxivResolverTest {
         assertThat(paper.authors()).hasSize(8).startsWith("Ashish Vaswani", "Noam Shazeer");
         assertThat(paper.publishedOn()).isEqualTo(LocalDate.of(2017, 6, 12));
         assertThat(paper.doi()).isNull();
+        assertThat(paper.source()).isEqualTo(PaperSource.REGISTRY);
     }
 
     @Test

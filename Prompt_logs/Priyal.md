@@ -77,3 +77,19 @@ Add migration `V4` for `paper.title`, `authors`, `published_on`, `doi`, `source`
 ## 18. Test and verify
 
 Test the service against the embedded Postgres with a mocked resolver: resolved, not found, unsupported link, three failures, a failing paper not blocking a newer one, and nothing pending. Read back from the database rather than the cached entity. Add a test that the worker calls the service on a schedule, and one for the new API fields. Then run a throwaway check against the real Crossref and arXiv APIs, delete it, and report the real test counts from `mvn verify`.
+
+## 19. Plan the next branch without handoffs
+
+Sujal has not opened any PRs yet, so anything that needs his code (`LlmClient`, the dashboard shell, `idea` table) is blocked. From `plans/PRIYAL.md`, pick the next item that needs nothing from him. Branch from the worker branch and list the files, the one dependency it adds and the tests, before writing code. Keep PDF/LLM work out of it.
+
+## 20. Build the meta-tag resolver (rung 2)
+
+Add `MetaTagResolver` (Jsoup, 10 s timeout, follows redirects, browser-style User-Agent). Read `citation_title`, `citation_author`, `citation_doi` and the publication date. If the page names a DOI, pass it through `CrossrefResolver` and prefer that result. Return empty for a bare PDF, a 401/403/404/410 and a page with no `citation_title`; throw on timeouts and other server errors so the worker retries. Add `source` to `ResolvedMetadata` so a paper records whether it came from the registry or from page tags, and use `@Order` so the ladder is Crossref, arXiv, meta tags. Keep it readable for both of us.
+
+## 21. Test with recorded pages, then check live
+
+Record the citation meta tags of a real Springer and a real Nature page into `src/test/resources/fixtures/html/`. Test with WireMock: tags read correctly, the Crossref upgrade, no `citation_title`, a bare PDF, a 403 and a 503. Then run a throwaway check against real links (an arXiv link, an arXiv-registered DOI, a Nature page, an IEEE page, a bare PDF, a fake DOI), delete it, and tell me what each ended up as and any limits you saw. Report real test counts. Do not stage, commit or push.
+
+## 22. Run the real Slack flow once
+
+The Slack code and the paper worker are merged into my branch but have only been tested with stubs. I want to see it work for real in `#scanner_testing`. Check what is missing on this machine (database, `.env`) without printing any secrets, tell me exactly what I have to set up and where each value comes from, then start the app and watch the logs while I post a mention with an arXiv link and a DOI. Afterwards read the database and tell me what was saved and what is still untested. Do not change code or commit anything.

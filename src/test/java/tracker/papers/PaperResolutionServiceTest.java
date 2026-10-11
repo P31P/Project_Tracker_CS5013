@@ -47,7 +47,7 @@ class PaperResolutionServiceTest extends PostgresTestBase {
         Paper paper = papers.saveAndFlush(new Paper(URL));
         when(resolver.resolve(URL)).thenReturn(Optional.of(new ResolvedMetadata(
                 "Attention Is All You Need", List.of("Ashish Vaswani", "Noam Shazeer"),
-                LocalDate.of(2017, 6, 12), null)));
+                LocalDate.of(2017, 6, 12), null, PaperSource.REGISTRY)));
 
         assertThat(service.resolveNext()).isTrue();
 
@@ -122,7 +122,7 @@ class PaperResolutionServiceTest extends PostgresTestBase {
         Paper failing = papers.saveAndFlush(new Paper("https://arxiv.org/abs/1111.11111"));
         Paper newer = papers.saveAndFlush(new Paper(URL));
         when(resolver.resolve(failing.getNormalizedUrl())).thenThrow(new IllegalStateException("503"));
-        when(resolver.resolve(URL)).thenReturn(Optional.of(new ResolvedMetadata("Title", List.of(), null, null)));
+        when(resolver.resolve(URL)).thenReturn(Optional.of(new ResolvedMetadata("Title", List.of(), null, null, PaperSource.REGISTRY)));
 
         service.resolveNext();
         service.resolveNext();

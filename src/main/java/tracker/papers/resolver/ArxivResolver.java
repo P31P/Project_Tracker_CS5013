@@ -11,6 +11,7 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.w3c.dom.Document;
@@ -18,9 +19,11 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import tracker.data.PaperSource;
 
 /** Looks up arXiv links (https://arxiv.org/abs/...) through the arXiv API, which answers in Atom XML. */
 @Component
+@Order(2)
 public class ArxivResolver implements PaperResolver {
 
     private static final String ABS_PREFIX = "https://arxiv.org/abs/";
@@ -53,7 +56,8 @@ public class ArxivResolver implements PaperResolver {
                 text(entry, ATOM, "title").replaceAll("\\s+", " ").trim(),
                 authors(entry),
                 LocalDate.parse(text(entry, ATOM, "published").substring(0, 10)),
-                doi.isEmpty() ? null : doi));
+                doi.isEmpty() ? null : doi,
+                PaperSource.REGISTRY));
     }
 
     private static Document parse(String xml) {

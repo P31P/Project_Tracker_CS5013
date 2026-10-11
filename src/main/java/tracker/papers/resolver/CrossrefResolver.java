@@ -5,14 +5,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import tracker.data.PaperSource;
 
 /** Looks up DOI links (https://doi.org/...) in the Crossref registry. */
 @Component
+@Order(1)
 public class CrossrefResolver implements PaperResolver {
 
     private static final String DOI_PREFIX = "https://doi.org/";
@@ -48,7 +51,8 @@ public class CrossrefResolver implements PaperResolver {
                 plainText(titles.get(0).asString()),
                 authors(work.path("author")),
                 publishedOn(work.path("issued").path("date-parts")),
-                work.path("DOI").asString(null)));
+                work.path("DOI").asString(null),
+                PaperSource.REGISTRY));
     }
 
     /** Crossref titles can carry HTML such as {@code <i>} and line breaks; keep only the text. */
