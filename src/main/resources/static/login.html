@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sign in · Raman Lab Tracker</title>
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="login-page">
+    <main class="login-layout">
+        <section>
+            <div class="brand">
+                <span class="logo" aria-hidden="true">RL</span>
+                <span class="brand-name">Raman Lab Tracker</span>
+            </div>
+            <h1 class="hero-title">Everything the lab is working on, in one place.</h1>
+            <p class="hero-text">Track projects as they grow, capture ideas before they slip away, and find every paper the lab shares in Slack, without filling in long forms.</p>
+            <ul class="features">
+                <li><strong>Projects</strong><span>Start with just a title; add updates to its timeline as it moves.</span></li>
+                <li><strong>Papers from Slack</strong><span>Mention the bot with a link and the title and authors fill in by themselves.</span></li>
+                <li><strong>Ideas</strong><span>Jot one down in seconds and turn it into a project when it's ready.</span></li>
+            </ul>
+        </section>
+        <section class="login-card">
+            <h2>Sign in</h2>
+            <p class="login-subtitle">Use the Google account the lab has added you with.</p>
+            <p id="refused" class="notice notice-error" role="alert" hidden>
+                That Google account isn't on the Raman Lab list. Ask a lab admin to add you, or sign in with another account.
+            </p>
+            <p id="signed-out" class="notice" hidden>You've signed out.</p>
+            <a class="button" href="/oauth2/authorization/google">Sign in with Google</a>
+            <p class="login-note">For Raman Lab members, IIT Madras</p>
+        </section>
+    </main>
+    <script>
+        const params = new URLSearchParams(location.search);
+        document.getElementById('refused').hidden = !params.has('error');
+        document.getElementById('signed-out').hidden = !params.has('logout');
+    </script>
+</body>
+</html>

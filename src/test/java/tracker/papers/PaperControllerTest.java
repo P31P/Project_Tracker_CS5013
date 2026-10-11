@@ -86,9 +86,9 @@ class PaperControllerTest extends PostgresTestBase {
     }
 
     @Test
-    void unauthenticatedRequestIsRedirected() throws Exception {
+    void unauthenticatedRequestGets401() throws Exception {
         mvc.perform(get("/api/papers"))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
     }
 
     private static Paper makePaper(Long id, String url, PaperStatus status) {
