@@ -47,3 +47,21 @@ Look at every other test that touches the database or the Slack tables and say w
 ## 11. Record the convention and the work
 
 Add one line to the Testing conventions in `CLAUDE.md` saying database tests must be `@Transactional` because all tests share one database. Add a short work-log entry for today in `Work_logs/Priyal.md`. Add the prompts used here to `Prompt_logs/Priyal.md` as cleaned-up versions: each with the context, the goal, the constraints and how to check the result. Do not stage, commit or push. Finish by listing the git commands I should run to update PR #10.
+
+# Priyal - prompts for the paper resolvers (rung 1)
+
+## 12. Pick the next handoff and plan the branch
+
+PR #10 (Slack ingestion) is still open. Read `plans/PRIYAL.md` and `plans/SHARED.md` and tell me the next unchecked Phase 1 item for me and which of it needs no handoff from Sujal. Propose a small branch for just that item: the files to add, any dependency it needs and how it will be tested. Do not start the worker, the database migration or the UI. Tell me how to branch while PR #10 is unmerged.
+
+## 13. Build the Crossref and arXiv resolvers
+
+Add `PaperResolver`, `CrossrefResolver` and `ArxivResolver` in `tracker.papers.resolver`. A resolver takes a `normalized_url` (see `LinkExtractor` in `CLAUDE.md`) and returns title, authors, publication date and DOI, or empty if the source doesn't know the paper. Throw on network or server errors so the worker can retry later. Use Spring's `RestClient` with a 10 s timeout and a User-Agent, and the JDK XML parser with DOCTYPE disabled for arXiv's Atom feed, so the only new dependency is WireMock (test scope, added to `pom.xml` and `requirements.txt` together). Keep the code simple enough that both of us can explain every line.
+
+## 14. Test with recorded responses
+
+Record real responses from `api.crossref.org` and `export.arxiv.org` into `src/test/resources/fixtures/`, including a known item, an unknown ID and (for arXiv) a malformed ID. Write WireMock tests with no Spring context for: a known DOI and arXiv ID, not found giving empty, a year-only date, an organisation author, a record with no title and a 503 being thrown. Run `mvn verify` and report the real counts.
+
+## 15. Record the work
+
+Update the README status line, tick the resolver item in `plans/PRIYAL.md`, and add a work-log entry and these prompts to the logs. Do not stage, commit or push; list the git commands to create the branch and open the PR.

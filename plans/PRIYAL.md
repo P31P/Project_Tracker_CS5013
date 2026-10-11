@@ -58,7 +58,7 @@ See [SHARED.md](SHARED.md).
   - permalink via `chat.getPermalink`
   - for each link: upsert `paper` by `normalized_url` (PENDING), insert `paper_share`
 - [x] `IngestionReplayTest`: the same event twice gives one message, one paper and one share
-- [ ] `PaperResolver` + `CrossrefResolver` + `ArxivResolver` (rung 1, adds WireMock for tests)
+- [x] `PaperResolver` + `CrossrefResolver` + `ArxivResolver` (rung 1, adds WireMock for tests)
 - [ ] `PaperResolutionWorker`: `@Scheduled` every 30 s, claims PENDING rows with `FOR UPDATE SKIP LOCKED`, runs the ladder, sets `source`/`status`
 - [x] `PaperController`: `GET /api/papers?status=`, `GET /api/papers/{id}`
 - [ ] `papers.js`: read-only list with title, authors, poster, date, Slack permalink, and a badge for MODEL/UNRESOLVED
