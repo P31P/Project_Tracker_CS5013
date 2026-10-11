@@ -56,6 +56,15 @@ class MetaTagResolverTest {
     }
 
     @Test
+    void dateWrittenWithAMonthNameKeepsMonthAndDay() {
+        servePage("html/pmc-article.html");
+
+        ResolvedMetadata paper = resolver.resolve(articleUrl).orElseThrow();
+
+        assertThat(paper.publishedOn()).isEqualTo(LocalDate.of(2019, 5, 3));
+    }
+
+    @Test
     void doiOnThePageIsLookedUpInCrossrefAndTheRegistryDataWins() {
         servePage("html/springer-article.html");
         ResolvedMetadata registry = new ResolvedMetadata("Registry title", List.of("A B"),

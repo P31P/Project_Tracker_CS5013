@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -29,7 +30,8 @@ public class MetaTagResolver implements PaperResolver {
     private static final int TIMEOUT_MS = 10_000;
     // pages we are not allowed to read or that no longer exist: not worth retrying
     private static final Set<Integer> UNREADABLE = Set.of(401, 403, 404, 410);
-    private static final Pattern DATE = Pattern.compile("^(\\d{4})(?:[/-](\\d{1,2}))?(?:[/-](\\d{1,2}))?");
+    // "2015/05/27", "2015-05" or "2019 May 3"
+    private static final Pattern DATE = Pattern.compile("^(\\d{4})(?:[/ -]([A-Za-z]{3,}|\\d{1,2}))?(?:[/ -](\\d{1,2}))?");
 
     private final CrossrefResolver crossref;
 
@@ -101,13 +103,29 @@ public class MetaTagResolver implements PaperResolver {
         return parts.size() == 2 ? (parts.get(1).trim() + " " + parts.get(0).trim()).trim() : name.trim();
     }
 
+    /** A number ("05") or a month name ("May"); anything else, such as "Spring", counts as January. */
+    private static int month(String text) {
+        if (text == null) {
+            return 1;
+        }
+        if (Character.isDigit(text.charAt(0))) {
+            return Integer.parseInt(text);
+        }
+        String start = text.substring(0, 3).toUpperCase();
+        for (Month month : Month.values()) {
+            if (month.name().startsWith(start)) {
+                return month.getValue();
+            }
+        }
+        return 1;
+    }
+
     private static LocalDate publishedOn(Document page) {
         for (String tag : List.of("citation_publication_date", "citation_date", "citation_online_date")) {
             Matcher date = DATE.matcher(meta(page, tag));
             if (date.find()) {
                 try {
-                    return LocalDate.of(Integer.parseInt(date.group(1)),
-                            date.group(2) == null ? 1 : Integer.parseInt(date.group(2)),
+                    return LocalDate.of(Integer.parseInt(date.group(1)), month(date.group(2)),
                             date.group(3) == null ? 1 : Integer.parseInt(date.group(3)));
                 } catch (DateTimeException e) {
                     return null;
