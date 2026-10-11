@@ -45,10 +45,15 @@ public class CrossrefResolver implements PaperResolver {
             return Optional.empty();
         }
         return Optional.of(new ResolvedMetadata(
-                titles.get(0).asString().trim(),
+                plainText(titles.get(0).asString()),
                 authors(work.path("author")),
                 publishedOn(work.path("issued").path("date-parts")),
                 work.path("DOI").asString(null)));
+    }
+
+    /** Crossref titles can carry HTML such as {@code <i>} and line breaks; keep only the text. */
+    private static String plainText(String title) {
+        return title.replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim();
     }
 
     private static List<String> authors(JsonNode authors) {

@@ -56,6 +56,19 @@ class CrossrefResolverTest {
     }
 
     @Test
+    void titleHasNoMarkupOrLineBreaks() {
+        crossref.stubFor(get(urlEqualTo(SPRINGER_PATH)).willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBody("""
+                        {"status":"ok","message":{
+                          "DOI":"10.1007/s11263-015-0816-y",
+                          "title":["Comprehensive metabolic engineering for fermenting glycerol efficiently in\\n                  <i>Saccharomyces cerevisiae</i>"]}}""")));
+
+        assertThat(resolver.resolve(SPRINGER_URL).orElseThrow().title()).isEqualTo(
+                "Comprehensive metabolic engineering for fermenting glycerol efficiently in Saccharomyces cerevisiae");
+    }
+
+    @Test
     void unknownDoiGivesEmpty() {
         crossref.stubFor(get(urlEqualTo("/works/10.1007%2Fnope")).willReturn(aResponse()
                 .withStatus(404)
