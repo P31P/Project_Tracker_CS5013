@@ -1,0 +1,49 @@
+# Priyal - prompts for the Slack ingestion handoff
+
+## 1. Understand the repository and handoff
+
+Read the repository instructions, README, project plan, shared handoff notes, existing Slack link extractor, database entities and repositories, Spring configuration, and current tests. Summarize what the project does, what is already implemented, and the exact work Priyal owns for the current handoff. Do not edit files yet. Call out dependencies on earlier handoffs and any design decisions that need an answer.
+
+## 2. Plan the implementation
+
+Based on the repository and handoff documents, propose a small implementation plan for the Slack-to-database ingestion flow and the read-only papers API. List the files to add or change, how the Slack client will be used, how duplicate events will be handled, and how each part will be tested. Keep the work within Phase 1 and avoid starting the resolver ladder or search features. Ask only about decisions that cannot be inferred from the repo.
+
+## 3. Configure Slack Socket Mode
+
+Implement Spring-managed Slack Bolt and Socket Mode lifecycle wiring using the versions and conventions appropriate for this project. Read bot token, signing secret, app token, and enablement from configuration/environment variables. Keep Socket Mode disabled by default so local startup and CI do not require Slack credentials. Ensure the connection starts and stops with the Spring application.
+
+## 4. Handle mentions promptly
+
+Add a Slack `app_mention` handler. Ignore bot messages and edited/deleted message subtypes. Acknowledge valid events immediately to meet Slack's response deadline, then delegate ingestion to a background task. Use the existing Slack client from the event context and follow the project's Spring conventions.
+
+## 5. Implement idempotent ingestion
+
+Add an ingestion service that records each Slack message once using the existing unique channel/message timestamp key. If the message was already recorded, stop processing it. For a new message, try to fetch its Slack permalink; if that optional API call fails, continue ingestion. Reuse the existing `LinkExtractor`, find or create papers by normalized URL, and save a share for each extracted paper link. Keep message, paper, and share writes consistent with the existing entities and migrations.
+
+## 6. Add the papers API
+
+Add a small response DTO and signed-in read-only endpoints for `GET /api/papers` and `GET /api/papers/{id}`. Support an optional status filter on the list and return 404 for a missing paper. Use repository methods that fit the current Spring Data patterns and do not add unrelated API features.
+
+## 7. Add focused tests
+
+Add tests for ingestion replay, a message without paper links, and a message with multiple links. Stub the Slack permalink API rather than making network calls. Add MockMvc tests for listing, filtering, lookup, missing IDs, and unauthenticated access; use a Mockito repository stub where appropriate. Reuse the existing test base and test conventions. Do not require real Slack credentials in tests.
+
+## 8. Update project documentation and review
+
+Update the README with the new papers endpoints and Slack environment variables. Add a short human-readable work-log entry and record the prompts used for this handoff. Review the final diff for unrelated changes and summarize the files changed, tests added, and any verification that was or was not run. Do not claim tests passed unless they were actually executed.
+
+# Priyal - prompts for the PR #10 review fixes
+
+## 9. Fix a flaky test reported in review
+
+PR #10 (branch `slack_integration`) has a review comment from Sujal: `SlackTablesTest.duplicatePaperUrlIsRejected` sometimes fails with `duplicate key value violates unique constraint "paper_normalized_url_key"` for `https://arxiv.org/abs/1706.03762`. The review says `IngestionReplayTest` is not `@Transactional`, so its papers stay in the shared embedded Postgres and collide with the same link in `SlackTablesTest` when it runs first.
+
+Confirm that diagnosis by reading both tests, `PostgresTestBase` and `IngestionService`. Then fix it the way the other database tests already do (`@Transactional`), and remove any manual clean-up the annotation makes redundant. Keep the change inside the test files.
+
+## 10. Check for the same problem elsewhere
+
+Look at every other test that touches the database or the Slack tables and say whether it can leak rows into other tests. Fix only real leaks. Then run `mvn verify` once with `-Dsurefire.runOrder=reversealphabetical` so the order that failed is exercised, and report the number of tests that passed. Do not claim a pass unless the command was run.
+
+## 11. Record the convention and the work
+
+Add one line to the Testing conventions in `CLAUDE.md` saying database tests must be `@Transactional` because all tests share one database. Add a short work-log entry for today in `Work_logs/Priyal.md`. Add the prompts used here to `Prompt_logs/Priyal.md` as cleaned-up versions: each with the context, the goal, the constraints and how to check the result. Do not stage, commit or push. Finish by listing the git commands I should run to update PR #10.

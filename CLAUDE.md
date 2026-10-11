@@ -58,5 +58,5 @@ Local overrides and secrets go in a git-ignored `.env` file.
 - `paper.normalized_url` comes from `LinkExtractor`: arXiv links become `https://arxiv.org/abs/<id>` (no version) and DOI/Springer/ACM/Wiley/Nature links become `https://doi.org/<lowercase doi>`.
 - Entities and repositories live in `tracker.data`. Add repository methods only when a feature needs them.
 - Every page requires Google sign-in (`tracker.auth.SecurityConfig`). Only `app_user` rows with `allowlisted = true` get in; add people with a new migration.
-- Tests that need the database extend `tracker.support.PostgresTestBase`. Tests that need a signed-in user use `oidcLogin()` from spring-security-test.
+- Tests that need the database extend `tracker.support.PostgresTestBase` and are `@Transactional`, so they roll back. All tests share one database; a test that commits leaks rows into the others. Tests that need a signed-in user use `oidcLogin()` from spring-security-test.
 - Secrets only in env vars / `.env` (git-ignored). Never hardcode tokens, keys or passwords.

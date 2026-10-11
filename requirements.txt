@@ -16,6 +16,8 @@ spring-boot-starter-flyway
 spring-boot-starter-security-oauth2-client
 flyway-database-postgresql
 postgresql
+com.slack.api:bolt-jakarta-socket-mode == 1.44.2
+org.glassfish.tyrus.bundles:tyrus-standalone-client == 2.2.0
 
 # Test libraries
 spring-boot-starter-test
