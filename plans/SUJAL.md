@@ -50,16 +50,19 @@ See [SHARED.md](SHARED.md).
 
 ### Phase 1: Projects + dashboard
 
-- [ ] `ApiError` + `GlobalExceptionHandler` (adds validation, webmvc-test): validation errors come back as JSON naming the field
-- [ ] `ProjectController`/`ProjectService`: create (title only), list, get, `PATCH`; `POST /projects/{id}/updates`; `GET /projects/{id}/timeline` (newest first)
-- [ ] `ProjectApiTest`
-- [ ] **H7:** `index.html`, `app.css`, `api.js` (fetch wrapper; a 401 sends the user to sign-in), `app.js` (header, tabs, `registerTab`, sign-in state from `/api/me`)
-- [ ] `projects.js`: list with status; new-project form with **one field** + "More details" expander; project page with timeline and an "add update" box
+- [x] `ApiError` + `GlobalExceptionHandler` (adds validation, webmvc-test): validation errors come back as JSON naming the field
+- [x] `ProjectController`/`ProjectService`: create (title only), list, get, `PATCH`; `POST /projects/{id}/updates`; `GET /projects/{id}/timeline` (newest first)
+- [x] `ProjectApiTest`
+- [x] **H7:** `index.html`, `app.css`, `api.js` (fetch wrapper; a 401 sends the user to sign-in), `app.js` (header, tabs, `registerTab`, sign-in state from `/api/me`)
+- [x] `projects.js`: list with status; new-project form with **one field** + "More details" expander; project page with timeline and an "add update" box
 
 ### Phase 2: Ideas + auto-fill
 
-- [ ] `IdeaController`/`IdeaService`: log (title only), list, tag, `POST /ideas/{id}/promote` (creates a linked project)
-- [ ] `ideas.js`: quick-log box, list, "Promote to project" button
+- [x] `IdeaController`/`IdeaService`: log (title only), list, tag, `POST /ideas/{id}/promote` (creates a linked project)
+- [x] `ideas.js`: quick-log box, list, "Promote to project" button
+- [x] Project members, tags and links (`V7`); idea tags and upvotes (`V8`); `GET /api/people`
+- [x] Home tab (`GET /api/overview`): counts, my projects, popular ideas, recent activity
+- [x] Board view of projects (drag a card to change status); line icons, avatars, coloured tags
 - [ ] **H2:** `LlmClient` (`String complete(String prompt)`) + `DisabledLlmClient`, selected by `llm.provider = hosted | local | disabled`; add the `llm:` section to `application.yml`
 - [ ] **H8:** `HostedLlmClient` over Java `HttpClient`: timeout, API key from env, one retry
 - [ ] `AutoFillService`: `prompts/autofill.txt` → Jackson → `AutoFillSuggestion`; validate the title length and tags; drop unknown fields. Bad output gives "couldn't suggest", never a 500

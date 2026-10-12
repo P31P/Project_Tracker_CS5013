@@ -38,11 +38,17 @@ What both of you depend on. Individual tasks are in [PRIYAL.md](PRIYAL.md) and [
 | `paper` | normalized_url UNIQUE, status (`PENDING`/`RESOLVED`/`UNRESOLVED`), created_at | V2 |
 | `paper` (added) | title, authors, published_on, doi, source, attempts, next_attempt_at | V4 |
 | `paper_share` | paper_id, slack_message_id, posted_url, **UNIQUE(paper_id, slack_message_id)** | V2 |
+| `project` (changed) | status now NOT NULL, `PLANNING`/`ACTIVE`/`ON_HOLD`/`DONE` (default `ACTIVE`); added updated_at | V5 |
+| `project_update` | project_id, author_id, kind (`NOTE`/`STATUS`), body (not blank), created_at | V5 |
+| `idea` | title **NOT NULL** and not blank, description, author_id, project_id (set when promoted), created_at | V6 |
+| `project` (changed) | added tags `text[]` | V7 |
+| `project_member` | project_id, user_id (primary key on both) | V7 |
+| `project_link` | project_id, label (not blank), url (must start `http://` or `https://`), created_at | V7 |
+| `idea` (changed) | added tags `text[]` | V8 |
+| `idea_vote` | idea_id, user_id (primary key on both, so one vote per person), created_at | V8 |
 
 ### Planned (added by the feature that needs it)
 
 | Table / columns | With |
 |---|---|
-| `project_update` | project timeline |
-| `idea` | idea logging |
 | `paper_reference` | paper resolver |
