@@ -4,9 +4,11 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -29,14 +31,24 @@ public class IdeaController {
     }
 
     @GetMapping
-    public List<IdeaView> list() {
-        return ideas.list();
+    public List<IdeaView> list(@AuthenticationPrincipal OidcUser user) {
+        return ideas.list(currentUser.of(user));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public IdeaView create(@RequestBody IdeaRequest request, @AuthenticationPrincipal OidcUser user) {
-        return ideas.create(request.title(), request.description(), currentUser.of(user));
+        return ideas.create(request, currentUser.of(user));
+    }
+
+    @PutMapping("/{id}/vote")
+    public IdeaView vote(@PathVariable Long id, @AuthenticationPrincipal OidcUser user) {
+        return ideas.vote(id, currentUser.of(user));
+    }
+
+    @DeleteMapping("/{id}/vote")
+    public IdeaView unvote(@PathVariable Long id, @AuthenticationPrincipal OidcUser user) {
+        return ideas.unvote(id, currentUser.of(user));
     }
 
     @PostMapping("/{id}/promote")

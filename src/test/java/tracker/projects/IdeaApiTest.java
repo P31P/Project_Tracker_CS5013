@@ -1,8 +1,10 @@
 package tracker.projects;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static tracker.projects.ProjectApiTest.SUJAL;
@@ -72,6 +74,35 @@ class IdeaApiTest extends PostgresTestBase {
     void promotingAnUnknownIdeaGives404() throws Exception {
         mvc.perform(post("/api/ideas/999999/promote").with(SUJAL).with(csrf()))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void votingTwiceCountsOnce() throws Exception {
+        long ideaId = idOf(postIdea("{\"title\": \"Shared GPU queue\"}"));
+        mvc.perform(put("/api/ideas/" + ideaId + "/vote").with(SUJAL).with(csrf()));
+
+        mvc.perform(put("/api/ideas/" + ideaId + "/vote").with(SUJAL).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.voteCount").value(1))
+                .andExpect(jsonPath("$.votedByMe").value(true));
+    }
+
+    @Test
+    void voteCanBeTakenBack() throws Exception {
+        long ideaId = idOf(postIdea("{\"title\": \"Weekly paper club\"}"));
+        mvc.perform(put("/api/ideas/" + ideaId + "/vote").with(SUJAL).with(csrf()));
+
+        mvc.perform(delete("/api/ideas/" + ideaId + "/vote").with(SUJAL).with(csrf()))
+                .andExpect(jsonPath("$.voteCount").value(0))
+                .andExpect(jsonPath("$.votedByMe").value(false));
+    }
+
+    @Test
+    void promotedProjectKeepsTheIdeasTags() throws Exception {
+        long ideaId = idOf(postIdea("{\"title\": \"Tagged idea\", \"tags\": [\"Graphs\"]}"));
+
+        mvc.perform(post("/api/ideas/" + ideaId + "/promote").with(SUJAL).with(csrf()))
+                .andExpect(jsonPath("$.tags[0]").value("graphs"));
     }
 
     private ResultActions postIdea(String json) throws Exception {

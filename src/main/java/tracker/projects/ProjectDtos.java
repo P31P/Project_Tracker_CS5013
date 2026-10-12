@@ -22,7 +22,7 @@ public final class ProjectDtos {
     public record LinkRequest(String label, String url) {
     }
 
-    public record IdeaRequest(String title, String description) {
+    public record IdeaRequest(String title, String description, List<String> tags) {
     }
 
     public record Person(Long id, String name) {
@@ -44,7 +44,8 @@ public final class ProjectDtos {
     public record TimelineEntry(Long id, UpdateKind kind, String body, String authorName, OffsetDateTime createdAt) {
     }
 
-    public record IdeaView(Long id, String title, String description, String authorName, OffsetDateTime createdAt,
-                           Long projectId, String projectTitle) {
+    public record IdeaView(Long id, String title, String description, String authorName, List<String> tags,
+                           OffsetDateTime createdAt, Long projectId, String projectTitle, int voteCount,
+                           boolean votedByMe) {
     }
 }
