@@ -53,6 +53,7 @@ Local overrides and secrets go in a git-ignored `.env` file.
 ## Conventions
 
 - Base package: `tracker`. Create a package when its first class is written.
+- Javadoc on every public class, record, constructor and method (and package-private helpers other classes call): a one-sentence summary, then `@param`, `@return` and `@throws` where they apply; record components go in `@param`. Overrides inherit the interface's doc. Keep it short; inline `//` comments stay for non-obvious reasons only.
 - Branches: short topic names, e.g. `scaffold`, `slack-events`, `oauth-allowlist`.
 - Migrations: numbered in order, `V1__init.sql`, `V2__create_slack_tables.sql`, `V3__…`. Take the next number after the highest on `main`; if someone merges that number first, renumber yours before merging. Never edit a merged migration.
 - `paper.normalized_url` comes from `LinkExtractor`: arXiv links become `https://arxiv.org/abs/<id>` (no version) and DOI/Springer/ACM/Wiley/Nature links become `https://doi.org/<lowercase doi>`.
