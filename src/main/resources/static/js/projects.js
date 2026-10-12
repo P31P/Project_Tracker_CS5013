@@ -1,13 +1,15 @@
-// Projects tab: the list (#projects) and one project with its timeline (#projects/<id>).
+// Projects tab: the list or board (#projects) and one project with its timeline (#projects/<id>).
 
 import { getJson, sendJson } from './api.js';
+import { icon } from './icons.js';
 import {
-    button, el, emptyState, errorState, field, filterChips, formDialog, input, relativeTime, select, skeleton,
-    textarea, toast,
+    avatar, avatarStack, button, el, emptyState, errorState, field, filterChips, formDialog, input, relativeTime,
+    segmented, select, skeleton, splitTags, tagList, tagPill, textarea, toast,
 } from './ui.js';
 
 const STATUSES = [['PLANNING', 'Planning'], ['ACTIVE', 'Active'], ['ON_HOLD', 'On hold'], ['DONE', 'Done']];
 const LABELS = Object.fromEntries(STATUSES);
+const VIEW_KEY = 'projects-view';
 
 export function renderProjects(container, page) {
     if (page.path) {
@@ -20,10 +22,11 @@ export function statusChip(status) {
     return el('span', 'status status-' + status.toLowerCase(), LABELS[status]);
 }
 
-/* List */
+/* List and board */
 
 async function renderList(container, page) {
-    page.actions.append(button('New project', 'button', () => newProjectDialog()));
+    const newButton = () => button(['plus', 'New project'], 'button', () => newProjectDialog());
+    page.actions.append(newButton());
     container.replaceChildren(skeleton());
 
     let projects;
@@ -35,50 +38,202 @@ async function renderList(container, page) {
     }
     if (projects.length === 0) {
         container.replaceChildren(emptyState('No projects yet',
-            'Start one with just a title. You can add details and updates as it grows.',
-            button('New project', 'button', () => newProjectDialog())));
+            'Start one with just a title. You can add people, tags, links and updates as it grows.', newButton(),
+            'folder'));
         return;
     }
 
-    let filter = 'ALL';
+    let view = savedView();
+    let status = 'ALL';
+    let tag = null;
+    const pickTag = picked => {
+        tag = picked;
+        draw();
+    };
+    const move = async (id, newStatus) => {
+        const project = projects.find(p => p.id === id);
+        if (!project || project.status === newStatus) {
+            return;
+        }
+        try {
+            const updated = await sendJson('PATCH', '/api/projects/' + id, { status: newStatus });
+            Object.assign(project, { status: updated.status, updatedAt: updated.updatedAt,
+                updateCount: updated.timeline.length });
+            toast(project.title + ' moved to ' + LABELS[newStatus]);
+        } catch (problem) {
+            toast(problem.message, 'error');
+        }
+        draw();
+    };
     const draw = () => {
-        const shown = filter === 'ALL' ? projects : projects.filter(p => p.status === filter);
-        const options = [['ALL', 'All', projects.length],
-            ...STATUSES.map(([key, label]) => [key, label, projects.filter(p => p.status === key).length])];
-        container.replaceChildren(
-            filterChips(options, filter, key => { filter = key; draw(); }),
+        page.actions.replaceChildren(
+            segmented([['list', 'List', 'list'], ['board', 'Board', 'board']], view, picked => {
+                view = picked;
+                saveView(picked);
+                draw();
+            }),
+            newButton());
+        const tagged = tag ? projects.filter(p => p.tags.includes(tag)) : projects;
+        const tagFilter = tag && el('div', 'active-filter', 'Showing projects tagged ', tagPill(tag),
+            button(['close', 'Clear'], 'link-button', () => pickTag(null)));
+        if (view === 'board') {
+            container.replaceChildren(...[tagFilter, board(tagged, pickTag, move)].filter(Boolean));
+            return;
+        }
+        const shown = status === 'ALL' ? tagged : tagged.filter(p => p.status === status);
+        const options = [['ALL', 'All', tagged.length],
+            ...STATUSES.map(([key, label]) => [key, label, tagged.filter(p => p.status === key).length])];
+        container.replaceChildren(...[
+            filterChips(options, status, key => { status = key; draw(); }),
+            tagFilter,
             shown.length > 0
-                ? el('div', 'card-list', ...shown.map(projectCard))
-                : el('p', 'muted', 'No projects with this status.'));
+                ? el('div', 'card-list', ...shown.map((project, index) => projectCard(project, pickTag, index)))
+                : el('p', 'muted', 'No projects match.'),
+        ].filter(Boolean));
     };
     draw();
 }
 
-function projectCard(project) {
-    const card = el('a', 'card card-link',
-        el('div', 'card-head', el('h3', 'card-title', project.title), statusChip(project.status)),
+// the whole card opens the project; tags stay clickable on top of it
+function projectCard(project, pickTag, index = 0) {
+    const link = el('a', 'stretched-link', project.title);
+    link.href = '#projects/' + project.id;
+    const card = el('article', 'card card-link project-card',
+        el('div', 'card-head', el('h3', 'card-title', link), statusChip(project.status)),
         project.description && el('p', 'card-text clamp', project.description),
-        el('p', 'card-meta', [
-            project.ownerName,
-            'updated ' + relativeTime(project.updatedAt),
-            project.updateCount === 1 ? '1 update' : project.updateCount + ' updates',
-        ].filter(Boolean).join(' · ')));
-    card.href = '#projects/' + project.id;
+        tagList(project.tags, pickTag),
+        el('div', 'card-foot',
+            avatarStack(project.members),
+            el('span', 'card-meta-inline', icon('message', 14), String(project.updateCount),
+                el('span', null, '· updated ' + relativeTime(project.updatedAt)))));
+    card.style.setProperty('--i', Math.min(index, 10));
     return card;
 }
 
-function newProjectDialog() {
+function board(projects, pickTag, move) {
+    return el('div', 'board', ...STATUSES.map(([key, label]) => {
+        const items = projects.filter(p => p.status === key);
+        const cards = el('div', 'board-cards', ...items.map(project => boardCard(project, pickTag)));
+        if (items.length === 0) {
+            cards.append(el('p', 'board-empty', 'Drag a project here'));
+        }
+        const column = el('section', 'board-column status-' + key.toLowerCase(),
+            el('header', 'board-head', el('span', 'board-dot'), el('h2', 'board-title', label),
+                el('span', 'board-count', String(items.length))),
+            cards);
+        column.addEventListener('dragover', event => {
+            event.preventDefault();
+            column.classList.add('drop-target');
+        });
+        column.addEventListener('dragleave', event => {
+            if (!column.contains(event.relatedTarget)) {
+                column.classList.remove('drop-target');
+            }
+        });
+        column.addEventListener('drop', event => {
+            event.preventDefault();
+            column.classList.remove('drop-target');
+            move(Number(event.dataTransfer.getData('text/plain')), key);
+        });
+        return column;
+    }));
+}
+
+function boardCard(project, pickTag) {
+    const card = projectCard(project, pickTag);
+    card.classList.add('board-card');
+    card.draggable = true;
+    // the card is what gets dragged, not the link inside it
+    card.querySelector('a').draggable = false;
+    card.addEventListener('dragstart', event => {
+        event.dataTransfer.setData('text/plain', String(project.id));
+        event.dataTransfer.effectAllowed = 'move';
+        card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    return card;
+}
+
+function savedView() {
+    try {
+        return localStorage.getItem(VIEW_KEY) === 'board' ? 'board' : 'list';
+    } catch {
+        return 'list';
+    }
+}
+
+function saveView(view) {
+    try {
+        localStorage.setItem(VIEW_KEY, view);
+    } catch {
+        // the choice just isn't remembered
+    }
+}
+
+/* Creating and editing */
+
+let people;
+
+// everyone who can sign in; fetched once per page load
+async function loadPeople() {
+    if (!people) {
+        people = getJson('/api/people').catch(error => {
+            people = null;
+            throw error;
+        });
+    }
+    return people;
+}
+
+function memberPicker(everyone, selectedIds) {
+    return el('div', 'member-picker', ...everyone.map(person => {
+        const box = el('input');
+        box.type = 'checkbox';
+        box.value = person.id;
+        box.checked = selectedIds.includes(person.id);
+        return el('label', 'member-option', box, avatar(person.name), el('span', null, person.name));
+    }));
+}
+
+function pickedIds(picker) {
+    return [...picker.querySelectorAll('input:checked')].map(box => Number(box.value));
+}
+
+export async function newProjectDialog() {
+    const everyone = await loadPeople().catch(() => []);
+    const picker = memberPicker(everyone, []);
     const more = el('details', 'more',
         el('summary', null, 'More details (optional)'),
-        field('Description', textarea('description', { placeholder: 'What is it about? Any links or context.' })),
-        field('Status', select('status', STATUSES, 'ACTIVE')));
+        field('Description', textarea('description', { placeholder: 'What is it about? Any context.' })),
+        field('Status', select('status', STATUSES, 'ACTIVE')),
+        field('Tags', input('tags', { placeholder: 'e.g. genomics, ml' })),
+        everyone.length > 0 && field('Teammates (you are added automatically)', picker));
     formDialog('New project', [
         field('Title', input('title', { placeholder: 'What are you working on?', required: true })),
         more,
     ], 'Create project', async values => {
-        const project = await sendJson('POST', '/api/projects', values);
+        const project = await sendJson('POST', '/api/projects',
+            { ...values, tags: splitTags(values.tags), memberIds: pickedIds(picker) });
         toast('Project created');
         location.hash = 'projects/' + project.id;
+    });
+}
+
+async function editDialog(project, redraw) {
+    const everyone = await loadPeople().catch(() => null);
+    const picker = everyone && memberPicker(everyone, project.members.map(member => member.id));
+    formDialog('Edit project', [
+        field('Title', input('title', { value: project.title, required: true })),
+        field('Description', textarea('description', { value: project.description || '', rows: 5 })),
+        field('Tags', input('tags', { value: project.tags.join(', '), placeholder: 'e.g. genomics, ml' })),
+        picker && field('Members', picker),
+    ].filter(Boolean), 'Save', async values => {
+        const changes = { ...values, tags: splitTags(values.tags) };
+        if (picker) {
+            changes.memberIds = pickedIds(picker);
+        }
+        redraw(await sendJson('PATCH', '/api/projects/' + project.id, changes));
+        toast('Project saved');
     });
 }
 
@@ -102,27 +257,44 @@ async function renderProject(container, page, id) {
     };
     const draw = () => {
         page.heading.textContent = project.title;
+        document.title = project.title + ' · Raman Lab Tracker';
         page.description.replaceChildren(backLink(), statusChip(project.status),
             el('span', 'muted', [project.ownerName && 'Owned by ' + project.ownerName,
                 'started ' + relativeTime(project.createdAt)].filter(Boolean).join(' · ')));
-        page.actions.replaceChildren(
-            statusPicker(project, redraw),
-            button('Edit', 'button button-secondary', () => editDialog(project, redraw)));
-        const about = project.description ? [el('div', 'card', el('p', 'prose', project.description))] : [];
-        container.replaceChildren(...about, composer(project, redraw), timeline(project.timeline));
+        page.actions.replaceChildren(button(['edit', 'Edit'], 'button button-secondary', () => editDialog(project, redraw)));
+        const about = project.description && el('div', 'card', el('p', 'prose', project.description));
+        container.replaceChildren(el('div', 'detail-layout',
+            el('div', 'detail-main', about, composer(project, redraw),
+                el('h2', 'section-title', 'Timeline'), timeline(project.timeline)),
+            el('aside', 'card detail-side', ...sidePanel(project, redraw))));
     };
     draw();
 }
 
 function backLink() {
-    const link = el('a', 'back-link', '← All projects');
+    const link = el('a', 'back-link', icon('back', 16), 'All projects');
     link.href = '#projects';
     return link;
 }
 
+function sideSection(title, ...children) {
+    return el('section', 'side-section', el('h2', 'side-title', title), ...children);
+}
+
+function sidePanel(project, redraw) {
+    return [
+        sideSection('Status', statusPicker(project, redraw)),
+        sideSection('Members', project.members.length > 0
+            ? el('ul', 'people', ...project.members.map(person =>
+                el('li', 'person', avatar(person.name), el('span', null, person.name))))
+            : el('p', 'muted side-empty', 'No members yet.')),
+        sideSection('Tags', tagList(project.tags) || el('p', 'muted side-empty', 'No tags yet. Add some with Edit.')),
+        sideSection('Links', linkList(project, redraw), linkForm(project, redraw)),
+    ];
+}
+
 function statusPicker(project, redraw) {
     const picker = select('status', STATUSES, project.status);
-    picker.classList.add('input-compact');
     picker.setAttribute('aria-label', 'Status');
     picker.addEventListener('change', async () => {
         try {
@@ -136,19 +308,59 @@ function statusPicker(project, redraw) {
     return picker;
 }
 
-function editDialog(project, redraw) {
-    formDialog('Edit project', [
-        field('Title', input('title', { value: project.title, required: true })),
-        field('Description', textarea('description', { value: project.description || '', rows: 5 })),
-    ], 'Save', async values => {
-        redraw(await sendJson('PATCH', '/api/projects/' + project.id, values));
-        toast('Project saved');
+function linkList(project, redraw) {
+    if (project.links.length === 0) {
+        return el('p', 'muted side-empty', 'Repos, docs, slides or datasets.');
+    }
+    return el('ul', 'links', ...project.links.map(link => {
+        const anchor = el('a', 'link-item', icon('external', 14), el('span', 'link-label', link.label));
+        // the server only stores http(s) links; checked again so nothing else ever becomes a href
+        if (/^https?:\/\//i.test(link.url)) {
+            anchor.href = link.url;
+        }
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
+        anchor.title = link.url;
+        const remove = button(icon('close', 14), 'icon-button', async () => {
+            try {
+                redraw(await sendJson('DELETE', '/api/projects/' + project.id + '/links/' + link.id));
+                toast('Link removed');
+            } catch (problem) {
+                toast(problem.message, 'error');
+            }
+        });
+        remove.setAttribute('aria-label', 'Remove ' + link.label);
+        return el('li', 'link-row', anchor, remove);
+    }));
+}
+
+function linkForm(project, redraw) {
+    const url = input('url', { placeholder: 'Paste a link', required: true });
+    url.setAttribute('aria-label', 'Link URL');
+    const label = input('label', { placeholder: 'Name (optional)' });
+    label.setAttribute('aria-label', 'Link name');
+    const add = el('button', 'button button-secondary button-small', icon('plus', 16), 'Add link');
+    add.type = 'submit';
+    const form = el('form', 'link-form', url, label, add);
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        add.disabled = true;
+        // "github.com/lab/repo" is taken to mean https://github.com/lab/repo
+        const address = /^[a-z]+:/i.test(url.value.trim()) ? url.value.trim() : 'https://' + url.value.trim();
+        try {
+            redraw(await sendJson('POST', '/api/projects/' + project.id + '/links', { label: label.value, url: address }));
+            toast('Link added');
+        } catch (problem) {
+            toast(problem.message, 'error');
+            add.disabled = false;
+        }
     });
+    return form;
 }
 
 function composer(project, redraw) {
     const body = textarea('body', { placeholder: 'What has changed? Results, blockers, next steps…', rows: 3 });
-    const post = el('button', 'button', 'Post update');
+    const post = el('button', 'button', icon('message', 16), 'Post update');
     post.type = 'submit';
     const form = el('form', 'card composer', body, el('div', 'composer-actions', post));
     form.addEventListener('submit', async event => {
@@ -172,6 +384,7 @@ function timeline(entries) {
     }
     return el('ol', 'timeline', ...entries.map(entry => el('li', 'timeline-item timeline-' + entry.kind.toLowerCase(),
         el('p', 'timeline-meta',
+            avatar(entry.authorName || 'Someone'),
             el('strong', null, entry.authorName || 'Someone'), ' · ' + relativeTime(entry.createdAt)),
         el('p', entry.kind === 'STATUS' ? 'timeline-change' : 'prose', entry.body))));
 }

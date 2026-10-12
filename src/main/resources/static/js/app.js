@@ -1,15 +1,16 @@
 import { getJson, signOut } from './api.js';
+import { icon } from './icons.js';
 import { renderIdeas } from './ideas.js';
 import { renderPapers } from './papers.js';
 import { renderProjects } from './projects.js';
-import { el, initials, toast } from './ui.js';
+import { el, hueOf, initials, toast } from './ui.js';
 
 const tabBar = document.getElementById('tabs');
 const content = document.getElementById('content');
 const tabs = new Map();
 
-function registerTab(id, label, render, description) {
-    const button = el('button', 'tab', label);
+function registerTab(id, label, render, description, iconName) {
+    const button = el('button', 'tab', icon(iconName, 16), label);
     button.type = 'button';
     button.id = 'tab-' + id;
     button.setAttribute('role', 'tab');
@@ -45,7 +46,9 @@ async function showUser() {
     try {
         const me = await getJson('/api/me');
         const name = me.name || me.email;
-        document.getElementById('avatar').textContent = initials(name);
+        const avatar = document.getElementById('avatar');
+        avatar.textContent = initials(name);
+        avatar.style.setProperty('--hue', hueOf(name));
         document.getElementById('user-name').textContent = name;
         document.getElementById('user-email').textContent = me.email;
     } catch (error) {
@@ -53,14 +56,16 @@ async function showUser() {
     }
 }
 
-document.getElementById('sign-out').addEventListener('click', () => {
+const signOutButton = document.getElementById('sign-out');
+signOutButton.prepend(icon('logout', 16));
+signOutButton.addEventListener('click', () => {
     signOut().catch(() => toast('Could not sign out. Try again.', 'error'));
 });
 
 tabBar.setAttribute('role', 'tablist');
-registerTab('projects', 'Projects', renderProjects, 'What the lab is working on, and how each project is moving.');
-registerTab('ideas', 'Ideas', renderIdeas, 'Thoughts worth keeping. Turn one into a project when it is ready.');
-registerTab('papers', 'Papers', renderPapers, 'Papers shared in Slack, with their details filled in automatically.');
+registerTab('projects', 'Projects', renderProjects, 'What the lab is working on, and how each project is moving.', 'folder');
+registerTab('ideas', 'Ideas', renderIdeas, 'Thoughts worth keeping. Turn one into a project when it is ready.', 'bulb');
+registerTab('papers', 'Papers', renderPapers, 'Papers shared in Slack, with their details filled in automatically.', 'paper');
 
 window.addEventListener('hashchange', showTab);
 showTab();
