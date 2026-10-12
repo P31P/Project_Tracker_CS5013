@@ -6,6 +6,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
+/** Builds the HTTP clients the resolvers use. */
 final class ResolverHttp {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
@@ -13,6 +14,13 @@ final class ResolverHttp {
     private ResolverHttp() {
     }
 
+    /**
+     * Creates a client with a 10-second connect and read timeout that follows redirects and names the app in its
+     * User-Agent.
+     *
+     * @param baseUrl the service's base address, e.g. {@code https://api.crossref.org}
+     * @return the client
+     */
     static RestClient client(String baseUrl) {
         HttpClient http = HttpClient.newBuilder()
                 .connectTimeout(TIMEOUT)

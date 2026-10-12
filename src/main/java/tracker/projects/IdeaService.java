@@ -17,6 +17,7 @@ import tracker.projects.ProjectDtos.IdeaView;
 import tracker.projects.ProjectDtos.ProjectDetail;
 import tracker.projects.ProjectDtos.ProjectRequest;
 
+/** Saves ideas, records votes and turns ideas into projects. */
 @Service
 @Transactional
 public class IdeaService {
@@ -26,6 +27,14 @@ public class IdeaService {
     private final AppUserRepository users;
     private final ProjectService projectService;
 
+    /**
+     * Creates the service.
+     *
+     * @param ideas where ideas are stored
+     * @param projects where projects are stored
+     * @param users where users are stored
+     * @param projectService creates the project when an idea is promoted
+     */
     public IdeaService(IdeaRepository ideas, ProjectRepository projects, AppUserRepository users,
                        ProjectService projectService) {
         this.ideas = ideas;
@@ -34,11 +43,25 @@ public class IdeaService {
         this.projectService = projectService;
     }
 
+    /**
+     * Lists every idea, newest first.
+     *
+     * @param viewer the signed-in user, to say which ideas they voted for; may be {@code null}
+     * @return all ideas
+     */
     @Transactional(readOnly = true)
     public List<IdeaView> list(AppUser viewer) {
         return ideas.findAllByOrderByCreatedAtDescIdDesc().stream().map(idea -> view(idea, viewer)).toList();
     }
 
+    /**
+     * Saves an idea.
+     *
+     * @param request the idea
+     * @param author who wrote it; may be {@code null}
+     * @return the saved idea
+     * @throws ResponseStatusException {@code 400} if the title is blank
+     */
     public IdeaView create(IdeaRequest request, AppUser author) {
         Idea idea = new Idea(ProjectService.required(request.title(), "An idea needs a title"),
                 ProjectService.blankToNull(request.description()), author);
@@ -46,7 +69,14 @@ public class IdeaService {
         return view(ideas.save(idea), author);
     }
 
-    /** Marks that the user is interested in the idea. Voting twice counts once. */
+    /**
+     * Records that a user is interested in an idea. Voting twice counts once.
+     *
+     * @param id the idea's id
+     * @param voter who is voting; if {@code null}, nothing is recorded
+     * @return the idea with its new vote count
+     * @throws ResponseStatusException {@code 404} if there is no idea with this id
+     */
     public IdeaView vote(Long id, AppUser voter) {
         Idea idea = find(id);
         if (voter != null && !votedBy(idea, voter)) {
@@ -55,6 +85,14 @@ public class IdeaService {
         return view(idea, voter);
     }
 
+    /**
+     * Takes back a user's vote. Does nothing if they hadn't voted.
+     *
+     * @param id the idea's id
+     * @param voter whose vote to remove; if {@code null}, nothing changes
+     * @return the idea with its new vote count
+     * @throws ResponseStatusException {@code 404} if there is no idea with this id
+     */
     public IdeaView unvote(Long id, AppUser voter) {
         Idea idea = find(id);
         if (voter != null) {
@@ -63,7 +101,16 @@ public class IdeaService {
         return view(idea, voter);
     }
 
-    /** Starts a project from the idea, in Planning, and links the two. An idea becomes a project only once. */
+    /**
+     * Starts a project from an idea, in Planning and with the idea's tags, and links the two. An idea becomes a
+     * project only once.
+     *
+     * @param id the idea's id
+     * @param actor who is promoting it; becomes the project's owner
+     * @return the new project
+     * @throws ResponseStatusException {@code 404} if there is no such idea, or {@code 409} if it
+     *         already became a project
+     */
     public ProjectDetail promote(Long id, AppUser actor) {
         Idea idea = find(id);
         if (idea.getProject() != null) {

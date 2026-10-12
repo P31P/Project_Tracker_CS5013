@@ -12,10 +12,13 @@ import tracker.data.PaperRepository;
 import tracker.papers.resolver.PaperResolver;
 import tracker.papers.resolver.ResolvedMetadata;
 
+/** Looks up the details of pending papers, one paper per transaction, and records the outcome. */
 @Service
 public class PaperResolutionService {
 
+    /** Failed lookups allowed before a paper is marked unresolved. */
     static final int MAX_ATTEMPTS = 3;
+    /** The wait after the first failed lookup; later failures wait longer. */
     static final Duration RETRY_DELAY = Duration.ofMinutes(10);
 
     private static final Logger log = LoggerFactory.getLogger(PaperResolutionService.class);
@@ -23,12 +26,23 @@ public class PaperResolutionService {
     private final PaperRepository papers;
     private final List<PaperResolver> resolvers;
 
+    /**
+     * Creates the service.
+     *
+     * @param papers where papers are stored
+     * @param resolvers the resolvers, in the order to try them
+     */
     public PaperResolutionService(PaperRepository papers, List<PaperResolver> resolvers) {
         this.papers = papers;
         this.resolvers = resolvers;
     }
 
-    /** Resolves one pending paper in its own transaction. Returns false when nothing was pending. */
+    /**
+     * Resolves the next pending paper that is due, in its own transaction. A paper no resolver knows becomes
+     * unresolved; a failed lookup keeps it pending and retries later, up to three times.
+     *
+     * @return {@code false} if no paper was due
+     */
     @Transactional
     public boolean resolveNext() {
         Optional<Paper> next = papers.claimNextPending();

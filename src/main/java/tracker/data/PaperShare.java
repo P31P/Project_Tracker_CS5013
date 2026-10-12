@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+/** One time a paper was posted in Slack: which message, and the link exactly as posted. */
 @Entity
 @Table(name = "paper_share")
 public class PaperShare {
@@ -29,27 +30,55 @@ public class PaperShare {
     @Column(name = "posted_url", nullable = false)
     private String postedUrl;
 
+    /** Used by JPA. */
     protected PaperShare() {
     }
 
+    /**
+     * Records a share.
+     *
+     * @param paper the paper that was shared
+     * @param slackMessage the message it was in
+     * @param postedUrl the link as it appeared in the message
+     */
     public PaperShare(Paper paper, SlackMessage slackMessage, String postedUrl) {
         this.paper = paper;
         this.slackMessage = slackMessage;
         this.postedUrl = postedUrl;
     }
 
+    /**
+     * Returns the database id, or {@code null} before the share is saved.
+     *
+     * @return the database id, or {@code null} before the share is saved
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * Returns the paper that was shared.
+     *
+     * @return the paper that was shared
+     */
     public Paper getPaper() {
         return paper;
     }
 
+    /**
+     * Returns the message the paper was in.
+     *
+     * @return the message the paper was in
+     */
     public SlackMessage getSlackMessage() {
         return slackMessage;
     }
 
+    /**
+     * Returns the link as it appeared in the message.
+     *
+     * @return the link as it appeared in the message
+     */
     public String getPostedUrl() {
         return postedUrl;
     }

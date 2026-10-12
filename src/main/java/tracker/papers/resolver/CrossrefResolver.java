@@ -13,7 +13,9 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tracker.data.PaperSource;
 
-/** Looks up DOI links (https://doi.org/...) in the Crossref registry. */
+/**
+ * Looks up DOI links ({@code https://doi.org/...}) in the Crossref registry.
+ */
 @Component
 @Order(1)
 public class CrossrefResolver implements PaperResolver {
@@ -23,6 +25,11 @@ public class CrossrefResolver implements PaperResolver {
     private final RestClient http;
     private final JsonMapper json = JsonMapper.builder().build();
 
+    /**
+     * Creates the resolver.
+     *
+     * @param baseUrl the Crossref API's address, from {@code papers.crossref-url}; tests point it at a stub
+     */
     public CrossrefResolver(@Value("${papers.crossref-url:https://api.crossref.org}") String baseUrl) {
         this.http = ResolverHttp.client(baseUrl);
     }

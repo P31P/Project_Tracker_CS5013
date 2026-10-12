@@ -18,11 +18,24 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.AnyRequestMatcher;
 
+/**
+ * Web security: Google sign-in limited to the allowlist, CSRF protection for the API, and sign-out.
+ *
+ * <p>Everything except the sign-in page and its stylesheets requires sign-in. Signed-out page requests are
+ * redirected to {@code /login.html}; signed-out API requests get {@code 401}.
+ */
 @Configuration
 public class SecurityConfig {
 
     private static final String LOGIN_PAGE = "/login.html";
 
+    /**
+     * Builds the security rules for every request.
+     *
+     * @param http Spring Security's builder
+     * @return the filter chain that applies the rules
+     * @throws Exception if Spring Security cannot build the chain
+     */
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -50,14 +63,28 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Runs right after Google confirms who the user is
+    /**
+     * Loads the signed-in user from Google and refuses anyone not on the allowlist. Runs right after Google
+     * confirms who the user is.
+     *
+     * @param allowlist decides who may sign in
+     * @return the user service Spring Security calls during sign-in
+     */
     @Bean
     OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService(AllowlistService allowlist) {
         OidcUserService google = new OidcUserService();
         return request -> requireAllowlisted(google.loadUser(request), allowlist);
     }
 
-    // Separate from the bean above so tests can call it without contacting Google
+    /**
+     * Lets an allowlisted user through. Kept separate from {@link #oidcUserService} so tests can call it
+     * without contacting Google.
+     *
+     * @param user the user Google signed in
+     * @param allowlist decides who may sign in
+     * @return the same user, if allowlisted
+     * @throws OAuth2AuthenticationException with error code {@code not_allowlisted} if the user is not allowed
+     */
     static OidcUser requireAllowlisted(OidcUser user, AllowlistService allowlist) {
         if (!allowlist.isAllowed(user.getEmail())) {
             throw new OAuth2AuthenticationException(
