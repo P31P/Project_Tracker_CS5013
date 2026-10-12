@@ -1079,14 +1079,64 @@ button.tag:hover {
 /* Ideas */
 
 .idea {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
     gap: 1rem;
 }
 
-.idea-body {
-    min-width: 0;
+.idea-action {
+    display: flex;
+}
+
+.card-byline {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.vote {
+    display: grid;
+    width: 3rem;
+    padding: 0.35rem 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.vote-inner {
+    display: grid;
+    justify-items: center;
+}
+
+.vote-count {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.vote:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.vote[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    color: var(--accent);
+}
+
+.composer-idea {
+    margin-bottom: 1.25rem;
+}
+
+.more-fields {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
 }
 
 .timeline-meta {
@@ -1245,8 +1295,11 @@ button.tag:hover {
     }
 
     .idea {
-        flex-direction: column;
-        align-items: stretch;
+        grid-template-columns: auto 1fr;
+    }
+
+    .idea-action {
+        grid-column: 2;
     }
 
     .tab .icon {
