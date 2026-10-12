@@ -285,6 +285,376 @@ a {
     border-left-color: var(--danger);
 }
 
+/* Shared building blocks */
+
+.muted {
+    color: var(--muted);
+}
+
+.page-description {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.75rem;
+}
+
+.back-link {
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.filter-chip[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.filter-count {
+    font-size: 0.8rem;
+    opacity: 0.75;
+}
+
+.card-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.card {
+    display: block;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: inherit;
+}
+
+.card + .card,
+.card + .timeline,
+.card + .timeline-empty {
+    margin-top: 1rem;
+}
+
+.card-list .card + .card {
+    margin-top: 0;
+}
+
+.card-link {
+    text-decoration: none;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.card-link:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    box-shadow: var(--shadow);
+    transform: translateY(-1px);
+}
+
+.card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.card-title {
+    margin: 0;
+    font-size: 1.05rem;
+    overflow-wrap: anywhere;
+}
+
+.card-text {
+    margin: 0.35rem 0 0;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
+
+.clamp {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.card-meta {
+    margin: 0.6rem 0 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.prose {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* Status chips: hue changes per status, transparency keeps them readable in both themes */
+
+.status {
+    flex-shrink: 0;
+    padding: 0.15rem 0.6rem;
+    border: 1px solid hsl(var(--hue) 60% 50% / 0.45);
+    border-radius: 999px;
+    background: hsl(var(--hue) 70% 50% / 0.14);
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none;
+    color: inherit;
+}
+
+.status-planning { --hue: 265; }
+.status-active { --hue: 145; }
+.status-on_hold { --hue: 35; }
+.status-done { --hue: 215; }
+
+/* Loading and empty states */
+
+.skeleton-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.skeleton-card {
+    height: 5.5rem;
+    border-radius: var(--radius);
+    background: linear-gradient(90deg, var(--surface) 25%, var(--surface-muted) 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+    to {
+        background-position: -200% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton-card {
+        animation: none;
+    }
+}
+
+.empty {
+    padding: 3rem 1.5rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    text-align: center;
+}
+
+.empty-mark {
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto 1rem;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.empty-title {
+    margin: 0;
+}
+
+.empty-text {
+    max-width: 28rem;
+    margin: 0.4rem auto 1.25rem;
+    color: var(--muted);
+}
+
+/* Forms */
+
+.field {
+    display: grid;
+    gap: 0.35rem;
+    margin-top: 1rem;
+}
+
+.field-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.input {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+}
+
+.input:focus {
+    border-color: var(--accent);
+    outline: 2px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    outline-offset: 0;
+}
+
+textarea.input {
+    resize: vertical;
+}
+
+.input-large {
+    border: 0;
+    padding: 0.25rem 0;
+    font-size: 1.1rem;
+}
+
+.input-large:focus {
+    outline: none;
+}
+
+.input-compact {
+    width: auto;
+    padding: 0.5rem 0.6rem;
+}
+
+.more {
+    margin-top: 0.75rem;
+}
+
+.more summary {
+    color: var(--accent);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.form-error {
+    margin: 1rem 0 0;
+    color: var(--danger);
+    font-size: 0.9rem;
+}
+
+.dialog {
+    width: min(32rem, calc(100% - 2rem));
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow);
+}
+
+.dialog::backdrop {
+    background: rgb(10 14 20 / 0.45);
+}
+
+.dialog-form {
+    padding: 1.5rem;
+}
+
+.dialog-title {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.composer textarea.input {
+    border: 0;
+    padding: 0;
+}
+
+.composer textarea.input:focus {
+    outline: none;
+}
+
+.composer-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.75rem;
+}
+
+/* Timeline */
+
+.timeline {
+    position: relative;
+    margin: 1.5rem 0 0;
+    padding: 0 0 0 1.5rem;
+    list-style: none;
+}
+
+.timeline::before {
+    content: "";
+    position: absolute;
+    top: 0.4rem;
+    bottom: 0.4rem;
+    left: 0.35rem;
+    width: 2px;
+    background: var(--border);
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.25rem;
+}
+
+.timeline-item::before {
+    content: "";
+    position: absolute;
+    top: 0.4rem;
+    left: -1.5rem;
+    width: 0.8rem;
+    height: 0.8rem;
+    border: 2px solid var(--bg);
+    border-radius: 50%;
+    background: var(--accent);
+}
+
+.timeline-status::before {
+    background: var(--muted);
+}
+
+.timeline-meta {
+    margin: 0 0 0.2rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.timeline-meta strong {
+    color: var(--text);
+}
+
+.timeline-change {
+    margin: 0;
+    color: var(--muted);
+    font-style: italic;
+}
+
+.timeline-empty {
+    margin-top: 1.5rem;
+}
+
 /* Sign-in page */
 
 .login-page {

@@ -6,16 +6,28 @@ function csrfToken() {
     return match ? decodeURIComponent(match[1]) : '';
 }
 
-export async function getJson(url) {
-    const response = await fetch(url, { headers: { Accept: 'application/json' } });
+async function handle(response) {
     if (response.status === 401) {
         location.href = SIGN_IN;
         throw new Error('Signed out');
     }
     if (!response.ok) {
-        throw new Error('HTTP ' + response.status);
+        const problem = await response.json().catch(() => ({}));
+        throw new Error(problem.error || 'Something went wrong (HTTP ' + response.status + ')');
     }
     return response.json();
+}
+
+export async function getJson(url) {
+    return handle(await fetch(url, { headers: { Accept: 'application/json' } }));
+}
+
+export async function sendJson(method, url, body) {
+    return handle(await fetch(url, {
+        method,
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-XSRF-TOKEN': csrfToken() },
+        body: body === undefined ? undefined : JSON.stringify(body),
+    }));
 }
 
 export async function signOut() {

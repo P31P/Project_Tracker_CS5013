@@ -1,5 +1,6 @@
 import { getJson, signOut } from './api.js';
 import { renderPapers } from './papers.js';
+import { renderProjects } from './projects.js';
 import { el, initials, toast } from './ui.js';
 
 const tabBar = document.getElementById('tabs');
@@ -18,25 +19,25 @@ function registerTab(id, label, render, description) {
     tabs.set(id, { label, render, description });
 }
 
+// "#projects/12" opens the projects tab with path "12"
 function showTab() {
-    const requested = location.hash.slice(1);
+    const [requested, ...rest] = location.hash.slice(1).split('/');
     const id = tabs.has(requested) ? requested : tabs.keys().next().value;
     const tab = tabs.get(id);
     for (const button of tabBar.children) {
         button.setAttribute('aria-selected', String(button.id === 'tab-' + id));
     }
 
+    const heading = el('h1', 'page-title', tab.label);
+    const description = el('p', 'page-description', tab.description);
     const actions = el('div', 'page-actions');
-    const header = el('header', 'page-header',
-        el('div', null, el('h1', 'page-title', tab.label), el('p', 'page-description', tab.description)),
-        actions);
     // a fresh panel per visit, so a tab that refreshes itself stops once it is no longer on the page
     const panel = el('section');
     panel.setAttribute('role', 'tabpanel');
     panel.setAttribute('aria-labelledby', 'tab-' + id);
-    content.replaceChildren(header, panel);
+    content.replaceChildren(el('header', 'page-header', el('div', null, heading, description), actions), panel);
     document.title = tab.label + ' · Raman Lab Tracker';
-    tab.render(panel, { actions });
+    tab.render(panel, { actions, heading, description, path: rest.join('/') });
 }
 
 async function showUser() {
@@ -56,6 +57,7 @@ document.getElementById('sign-out').addEventListener('click', () => {
 });
 
 tabBar.setAttribute('role', 'tablist');
+registerTab('projects', 'Projects', renderProjects, 'What the lab is working on, and how each project is moving.');
 registerTab('papers', 'Papers', renderPapers, 'Papers shared in Slack, with their details filled in automatically.');
 
 window.addEventListener('hashchange', showTab);
