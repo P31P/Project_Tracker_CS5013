@@ -48,7 +48,7 @@ public class IdeaService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This idea is already a project");
         }
         ProjectDetail project = projectService.create(
-                new ProjectRequest(idea.getTitle(), idea.getDescription(), ProjectStatus.PLANNING), actor);
+                new ProjectRequest(idea.getTitle(), idea.getDescription(), ProjectStatus.PLANNING, null, null), actor);
         idea.promotedTo(projects.getReferenceById(project.id()));
         return project;
     }

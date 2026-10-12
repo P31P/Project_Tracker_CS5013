@@ -2,6 +2,7 @@ package tracker.projects;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -109,6 +110,71 @@ class ProjectApiTest extends PostgresTestBase {
         mvc.perform(get("/api/projects/999999").with(SUJAL))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("No project with id 999999"));
+    }
+
+    @Test
+    void ownerIsTheFirstMemberAndTagsAreTidied() throws Exception {
+        send(post("/api/projects"), "{\"title\": \"Cell imaging\", \"tags\": [\" #Vision\", \"NLP\", \"vision\", \"\"]}")
+                .andExpect(jsonPath("$.tags").value(org.hamcrest.Matchers.contains("vision", "nlp")))
+                .andExpect(jsonPath("$.members[0].name").value("Sujal Jayant Kumar"))
+                .andExpect(jsonPath("$.members.length()").value(1));
+    }
+
+    @Test
+    void membersCanBeReplaced() throws Exception {
+        long id = create("Shared project");
+        long priyal = personId("Priyal Patel");
+
+        send(patch("/api/projects/" + id), "{\"memberIds\": [" + priyal + "]}")
+                .andExpect(jsonPath("$.members.length()").value(1))
+                .andExpect(jsonPath("$.members[0].name").value("Priyal Patel"));
+    }
+
+    @Test
+    void unknownMemberIsRefused() throws Exception {
+        long id = create("Ghost member");
+
+        send(patch("/api/projects/" + id), "{\"memberIds\": [999999]}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Someone in the member list doesn't exist"));
+    }
+
+    @Test
+    void linkWithoutALabelIsNamedAfterItsSite() throws Exception {
+        long id = create("Tracker");
+
+        send(post("/api/projects/" + id + "/links"), "{\"url\": \"https://github.com/P31P/Project_Tracker_CS5013\"}")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.links[0].label").value("github.com"))
+                .andExpect(jsonPath("$.links[0].url").value("https://github.com/P31P/Project_Tracker_CS5013"));
+    }
+
+    @Test
+    void onlyWebLinksAreAccepted() throws Exception {
+        long id = create("Unsafe link");
+
+        send(post("/api/projects/" + id + "/links"), "{\"label\": \"Click\", \"url\": \"javascript:alert(1)\"}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("A link must be a web address starting with https://"));
+    }
+
+    @Test
+    void linkCanBeRemoved() throws Exception {
+        long id = create("Removable link");
+        String body = send(post("/api/projects/" + id + "/links"),
+                "{\"label\": \"Proposal\", \"url\": \"https://github.com/P31P/Project_Tracker_CS5013\"}")
+                .andReturn().getResponse().getContentAsString();
+        long linkId = ((Number) JsonPath.read(body, "$.links[0].id")).longValue();
+
+        mvc.perform(delete("/api/projects/" + id + "/links/" + linkId).with(SUJAL).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.links").isEmpty());
+    }
+
+    private long personId(String name) throws Exception {
+        String people = mvc.perform(get("/api/people").with(SUJAL)).andReturn().getResponse().getContentAsString();
+        java.util.List<Number> ids = JsonPath.read(people, "$[?(@.name == '" + name + "')].id");
+        return ids.get(0).longValue();
     }
 
     private long create(String title) throws Exception {

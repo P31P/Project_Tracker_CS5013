@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import tracker.auth.CurrentUser;
+import tracker.projects.ProjectDtos.LinkRequest;
 import tracker.projects.ProjectDtos.ProjectDetail;
 import tracker.projects.ProjectDtos.ProjectRequest;
 import tracker.projects.ProjectDtos.ProjectSummary;
@@ -58,5 +60,16 @@ public class ProjectController {
     public TimelineEntry addUpdate(@PathVariable Long id, @RequestBody UpdateRequest request,
                                    @AuthenticationPrincipal OidcUser user) {
         return projects.addUpdate(id, request.body(), currentUser.of(user));
+    }
+
+    @PostMapping("/{id}/links")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ProjectDetail addLink(@PathVariable Long id, @RequestBody LinkRequest request) {
+        return projects.addLink(id, request);
+    }
+
+    @DeleteMapping("/{id}/links/{linkId}")
+    public ProjectDetail removeLink(@PathVariable Long id, @PathVariable Long linkId) {
+        return projects.removeLink(id, linkId);
     }
 }

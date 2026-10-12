@@ -11,20 +11,33 @@ public final class ProjectDtos {
     private ProjectDtos() {
     }
 
-    public record ProjectRequest(String title, String description, ProjectStatus status) {
+    // fields left out (null) are not changed by a PATCH
+    public record ProjectRequest(String title, String description, ProjectStatus status, List<String> tags,
+                                 List<Long> memberIds) {
     }
 
     public record UpdateRequest(String body) {
     }
 
+    public record LinkRequest(String label, String url) {
+    }
+
     public record IdeaRequest(String title, String description) {
     }
 
+    public record Person(Long id, String name) {
+    }
+
+    public record LinkView(Long id, String label, String url) {
+    }
+
     public record ProjectSummary(Long id, String title, String description, ProjectStatus status, String ownerName,
-                                 OffsetDateTime createdAt, OffsetDateTime updatedAt, long updateCount) {
+                                 List<String> tags, List<Person> members, OffsetDateTime createdAt,
+                                 OffsetDateTime updatedAt, long updateCount) {
     }
 
     public record ProjectDetail(Long id, String title, String description, ProjectStatus status, String ownerName,
+                                List<String> tags, List<Person> members, List<LinkView> links,
                                 OffsetDateTime createdAt, OffsetDateTime updatedAt, List<TimelineEntry> timeline) {
     }
 
