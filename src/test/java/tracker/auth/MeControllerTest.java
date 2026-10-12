@@ -28,8 +28,8 @@ class MeControllerTest extends PostgresTestBase {
     }
 
     @Test
-    void signedOutVisitorIsSentToGoogle() throws Exception {
+    void signedOutApiCallGets401() throws Exception {
         mvc.perform(get("/api/me"))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
     }
 }

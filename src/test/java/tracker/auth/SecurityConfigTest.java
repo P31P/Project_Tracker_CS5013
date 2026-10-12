@@ -2,8 +2,10 @@ package tracker.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -35,16 +37,41 @@ class SecurityConfigTest extends PostgresTestBase {
     private AppUserRepository users;
 
     @Test
-    void signedOutVisitorIsSentToGoogle() throws Exception {
+    void signedOutVisitorIsSentToTheSignInPage() throws Exception {
         mvc.perform(get("/"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/oauth2/authorization/google"));
+                .andExpect(redirectedUrl("/login.html"));
+    }
+
+    @Test
+    void signInPageAndItsStylesAreOpenToEveryone() throws Exception {
+        mvc.perform(get("/login.html")).andExpect(status().isOk());
+        mvc.perform(get("/css/app.css")).andExpect(status().isOk());
+    }
+
+    // a refused sign-in lands here; if it redirected to Google too, the user would loop forever
+    @Test
+    void signInErrorPageIsShownWithoutSigningIn() throws Exception {
+        mvc.perform(get("/login.html").param("error", ""))
+                .andExpect(status().isOk());
     }
 
     @Test
     void signedInUserGetsThePage() throws Exception {
         mvc.perform(get("/").with(oidcLogin()))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void signOutReturnsToTheSignInPage() throws Exception {
+        mvc.perform(post("/logout").with(oidcLogin()).with(csrf()))
+                .andExpect(redirectedUrl("/login.html?logout"));
+    }
+
+    @Test
+    void signOutWithoutTheCsrfTokenIsRefused() throws Exception {
+        mvc.perform(post("/logout").with(oidcLogin()))
+                .andExpect(status().isForbidden());
     }
 
     @Test
