@@ -17,20 +17,49 @@ import tracker.data.UpdateKind;
 import tracker.projects.ProjectDtos.ProjectSummary;
 import tracker.projects.ProjectService;
 
-/** The home page: lab-wide numbers, the user's own projects and what happened lately. */
+/**
+ * Builds the Home tab: lab-wide numbers, the user's own projects and what happened lately.
+ */
 @Service
 @Transactional(readOnly = true)
 public class OverviewService {
 
     private static final int FEED_SIZE = 12;
 
+    /**
+     * Everything the Home tab shows.
+     *
+     * @param counts lab-wide numbers
+     * @param mine the signed-in user's projects, most recently changed first
+     * @param activity the newest events, newest first
+     */
     public record Overview(Counts counts, List<ProjectSummary> mine, List<Activity> activity) {
     }
 
+    /**
+     * Lab-wide numbers.
+     *
+     * @param planning projects in Planning
+     * @param active active projects
+     * @param onHold projects on hold
+     * @param done finished projects
+     * @param openIdeas ideas that haven't become projects
+     * @param papers papers shared in Slack
+     */
     public record Counts(long planning, long active, long onHold, long done, long openIdeas, long papers) {
     }
 
-    /** One line in the feed, e.g. "Priyal · posted an update on · Graph search". href is a tab link or a paper URL. */
+    /**
+     * One line in the activity feed, e.g. "Priyal · posted an update on · Graph search".
+     *
+     * @param kind {@code NOTE}, {@code STATUS}, {@code PROJECT}, {@code IDEA} or {@code PAPER}
+     * @param who who did it, or {@code null} for a paper from Slack
+     * @param action what they did, e.g. "posted an update on"
+     * @param target the title of the project, idea or paper
+     * @param href a tab link such as {@code #projects/12}, or a paper's web address
+     * @param excerpt the text of an update, or {@code null}
+     * @param at when it happened
+     */
     public record Activity(String kind, String who, String action, String target, String href, String excerpt,
                            OffsetDateTime at) {
     }
@@ -41,6 +70,15 @@ public class OverviewService {
     private final PaperRepository papers;
     private final ProjectService projectService;
 
+    /**
+     * Creates the service.
+     *
+     * @param projects where projects are stored
+     * @param updates where timeline entries are stored
+     * @param ideas where ideas are stored
+     * @param papers where papers are stored
+     * @param projectService finds the user's projects
+     */
     public OverviewService(ProjectRepository projects, ProjectUpdateRepository updates, IdeaRepository ideas,
                            PaperRepository papers, ProjectService projectService) {
         this.projects = projects;
@@ -50,6 +88,12 @@ public class OverviewService {
         this.projectService = projectService;
     }
 
+    /**
+     * Builds the Home tab for a user.
+     *
+     * @param user the signed-in user; may be {@code null}, which leaves out "your projects"
+     * @return the numbers, the user's projects and the latest activity
+     */
     public Overview overview(AppUser user) {
         Counts counts = new Counts(projects.countByStatus(ProjectStatus.PLANNING),
                 projects.countByStatus(ProjectStatus.ACTIVE), projects.countByStatus(ProjectStatus.ON_HOLD),

@@ -33,6 +33,11 @@ import tracker.projects.ProjectDtos.ProjectRequest;
 import tracker.projects.ProjectDtos.ProjectSummary;
 import tracker.projects.ProjectDtos.TimelineEntry;
 
+/**
+ * Creates, changes and reads projects, their timelines, members, tags and links.
+ *
+ * <p>Errors are thrown as {@link ResponseStatusException}s with a readable reason.
+ */
 @Service
 @Transactional
 public class ProjectService {
@@ -42,6 +47,14 @@ public class ProjectService {
     private final ProjectLinkRepository links;
     private final AppUserRepository users;
 
+    /**
+     * Creates the service.
+     *
+     * @param projects where projects are stored
+     * @param updates where timeline entries are stored
+     * @param links where project links are stored
+     * @param users where users are stored
+     */
     public ProjectService(ProjectRepository projects, ProjectUpdateRepository updates, ProjectLinkRepository links,
                           AppUserRepository users) {
         this.projects = projects;
@@ -50,12 +63,22 @@ public class ProjectService {
         this.users = users;
     }
 
+    /**
+     * Lists every project, most recently changed first.
+     *
+     * @return all projects
+     */
     @Transactional(readOnly = true)
     public List<ProjectSummary> list() {
         return summaries(project -> true);
     }
 
-    /** Projects the user owns or is a member of. */
+    /**
+     * Lists the projects a user owns or is a member of, most recently changed first.
+     *
+     * @param user the user; may be {@code null}
+     * @return the user's projects, or an empty list if {@code user} is {@code null}
+     */
     @Transactional(readOnly = true)
     public List<ProjectSummary> involving(AppUser user) {
         if (user == null) {
@@ -65,11 +88,26 @@ public class ProjectService {
                 || project.getMembers().stream().anyMatch(member -> isUser(member, user)));
     }
 
+    /**
+     * Returns one project with its timeline and links.
+     *
+     * @param id the project's id
+     * @return the project
+     * @throws ResponseStatusException {@code 404} if there is no project with this id
+     */
     @Transactional(readOnly = true)
     public ProjectDetail get(Long id) {
         return detail(find(id));
     }
 
+    /**
+     * Creates a project. Only the title is required; the owner becomes its first member.
+     *
+     * @param request the project to create
+     * @param owner who is creating it; may be {@code null}
+     * @return the new project
+     * @throws ResponseStatusException {@code 400} if the title is blank or a member id is unknown
+     */
     public ProjectDetail create(ProjectRequest request, AppUser owner) {
         Project project = new Project(required(request.title(), "A project needs a title"));
         project.setDescription(blankToNull(request.description()));
@@ -87,6 +125,16 @@ public class ProjectService {
         return detail(projects.save(project));
     }
 
+    /**
+     * Changes a project. Only the fields in the request are changed, and a status change is logged on the timeline.
+     *
+     * @param id the project's id
+     * @param request the changes
+     * @param actor who is making them; may be {@code null}
+     * @return the changed project
+     * @throws ResponseStatusException {@code 404} if there is no such project, or {@code 400} if
+     *         the title is blank or a member id is unknown
+     */
     public ProjectDetail update(Long id, ProjectRequest request, AppUser actor) {
         Project project = find(id);
         if (request.title() != null) {
@@ -112,6 +160,16 @@ public class ProjectService {
         return detail(project);
     }
 
+    /**
+     * Adds a note to a project's timeline.
+     *
+     * @param id the project's id
+     * @param body the note
+     * @param author who wrote it; may be {@code null}
+     * @return the new timeline entry
+     * @throws ResponseStatusException {@code 404} if there is no such project, or {@code 400} if
+     *         the note is blank
+     */
     public TimelineEntry addUpdate(Long id, String body, AppUser author) {
         Project project = find(id);
         ProjectUpdate update = updates.save(
@@ -120,7 +178,15 @@ public class ProjectService {
         return entry(update);
     }
 
-    /** Adds a link such as a repo or a doc. Without a label, the site's name is used. */
+    /**
+     * Adds a link such as a repository or a document. Without a label, the site's name is used.
+     *
+     * @param id the project's id
+     * @param request the link
+     * @return the project with the new link
+     * @throws ResponseStatusException {@code 404} if there is no such project, or {@code 400} if
+     *         the address is missing or isn't an http(s) web address
+     */
     public ProjectDetail addLink(Long id, LinkRequest request) {
         Project project = find(id);
         String url = required(request.url(), "A link needs a URL");
@@ -133,6 +199,15 @@ public class ProjectService {
         return detail(project);
     }
 
+    /**
+     * Removes a link from a project.
+     *
+     * @param id the project's id
+     * @param linkId the link's id
+     * @return the project without the link
+     * @throws ResponseStatusException {@code 404} if there is no such project or no such link
+     *         on it
+     */
     public ProjectDetail removeLink(Long id, Long linkId) {
         Project project = find(id);
         ProjectLink link = links.findByIdAndProjectId(linkId, id)
@@ -185,6 +260,12 @@ public class ProjectService {
                 u.getCreatedAt());
     }
 
+    /**
+     * Turns users into {@link Person}s, sorted by name.
+     *
+     * @param users the users
+     * @return the same people, by name
+     */
     static List<Person> people(Collection<AppUser> users) {
         return users.stream()
                 .map(user -> new Person(user.getId(), CurrentUser.nameOf(user)))
@@ -197,7 +278,13 @@ public class ProjectService {
         return candidate != null && candidate.getId().equals(user.getId());
     }
 
-    /** "  #Vision, NLP, vision " becomes ["vision", "nlp"]. */
+    /**
+     * Tidies tags: trims them, drops a leading {@code #}, lowercases them and removes blanks and duplicates.
+     * For example, {@code ["  #Vision", "NLP", "vision"]} becomes {@code ["vision", "nlp"]}.
+     *
+     * @param raw the tags as typed; may be {@code null}
+     * @return the tidied tags, in their first order
+     */
     static List<String> tags(List<String> raw) {
         if (raw == null) {
             return List.of();
@@ -223,6 +310,15 @@ public class ProjectService {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A link must be a web address starting with https://");
     }
 
+    /**
+     * Checks that a required text was given.
+     *
+     * @param text the text
+     * @param message the error message if it is missing
+     * @return the text, trimmed
+     * @throws ResponseStatusException {@code 400} with {@code message} if the
+     *         text is {@code null} or blank
+     */
     static String required(String text, String message) {
         if (text == null || text.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
@@ -230,6 +326,12 @@ public class ProjectService {
         return text.trim();
     }
 
+    /**
+     * Trims an optional text, treating a blank one as missing.
+     *
+     * @param text the text; may be {@code null}
+     * @return the trimmed text, or {@code null} if it was {@code null} or blank
+     */
     static String blankToNull(String text) {
         return text == null || text.isBlank() ? null : text.trim();
     }
