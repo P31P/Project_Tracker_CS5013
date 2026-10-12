@@ -1,4 +1,5 @@
 import { getJson, signOut } from './api.js';
+import { renderIdeas } from './ideas.js';
 import { renderPapers } from './papers.js';
 import { renderProjects } from './projects.js';
 import { el, initials, toast } from './ui.js';
@@ -58,6 +59,7 @@ document.getElementById('sign-out').addEventListener('click', () => {
 
 tabBar.setAttribute('role', 'tablist');
 registerTab('projects', 'Projects', renderProjects, 'What the lab is working on, and how each project is moving.');
+registerTab('ideas', 'Ideas', renderIdeas, 'Thoughts worth keeping. Turn one into a project when it is ready.');
 registerTab('papers', 'Papers', renderPapers, 'Papers shared in Slack, with their details filled in automatically.');
 
 window.addEventListener('hashchange', showTab);

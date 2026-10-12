@@ -655,6 +655,19 @@ textarea.input {
     margin-top: 1.5rem;
 }
 
+/* Ideas */
+
+.idea {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.idea-body {
+    min-width: 0;
+}
+
 /* Sign-in page */
 
 .login-page {
@@ -784,5 +797,10 @@ textarea.input {
 
     .content {
         padding: 1.25rem 1rem 3rem;
+    }
+
+    .idea {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
