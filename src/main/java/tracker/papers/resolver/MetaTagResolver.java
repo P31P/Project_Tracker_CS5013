@@ -35,6 +35,11 @@ public class MetaTagResolver implements PaperResolver {
 
     private final CrossrefResolver crossref;
 
+    /**
+     * Creates the resolver.
+     *
+     * @param crossref used when a page names a DOI, so the registry's data wins
+     */
     public MetaTagResolver(CrossrefResolver crossref) {
         this.crossref = crossref;
     }

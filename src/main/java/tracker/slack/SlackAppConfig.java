@@ -11,12 +11,20 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/** Connects to Slack over Socket Mode. Runs only when {@code slack.socket-mode-enabled} is {@code true}. */
 @Configuration
 @ConditionalOnProperty(name = "slack.socket-mode-enabled", havingValue = "true")
 public class SlackAppConfig {
 
     private static final Logger log = LoggerFactory.getLogger(SlackAppConfig.class);
 
+    /**
+     * Creates the Slack app.
+     *
+     * @param botToken the bot token, from {@code slack.bot-token}
+     * @param signingSecret the signing secret, from {@code slack.signing-secret}
+     * @return the app
+     */
     @Bean
     App slackApp(
             @Value("${slack.bot-token}") String botToken,
@@ -27,6 +35,14 @@ public class SlackAppConfig {
                 .build());
     }
 
+    /**
+     * Opens the Socket Mode connection when the app starts and closes it when the app stops. If Slack can't be
+     * reached, the error is logged and the rest of the tracker keeps running.
+     *
+     * @param app the Slack app
+     * @param appToken the app-level token, from {@code slack.app-token}
+     * @return the lifecycle Spring starts and stops
+     */
     @Bean
     SmartLifecycle socketModeLifecycle(
             App app,

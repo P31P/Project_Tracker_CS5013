@@ -17,6 +17,7 @@ import tracker.data.PaperShareRepository;
 import tracker.data.SlackMessage;
 import tracker.data.SlackMessageRepository;
 
+/** Stores Slack messages that mention the bot, and the papers linked in them. */
 @Service
 public class IngestionService {
 
@@ -25,6 +26,14 @@ public class IngestionService {
     private final PaperShareRepository shares;
     private final LinkExtractor extractor;
 
+    /**
+     * Creates the service.
+     *
+     * @param messages where Slack messages are stored
+     * @param papers where papers are stored
+     * @param shares where shares are stored
+     * @param extractor finds paper links in message text
+     */
     public IngestionService(SlackMessageRepository messages, PaperRepository papers,
                             PaperShareRepository shares, LinkExtractor extractor) {
         this.messages = messages;
@@ -33,14 +42,31 @@ public class IngestionService {
         this.extractor = extractor;
     }
 
-    /** Idempotent ingestion — safe to call twice with the same event. */
+    /**
+     * Stores a message and its paper links. Safe to call twice with the same event: a message already stored is
+     * skipped.
+     *
+     * @param channelId the Slack channel id
+     * @param messageTs the message timestamp
+     * @param userId the poster's Slack user id
+     * @param text the message text
+     * @param client the Slack client, used to fetch the permalink and the poster's name
+     */
     @Transactional
     public void ingest(String channelId, String messageTs, String userId, String text,
                        MethodsClient client) {
         doIngest(channelId, messageTs, userId, text, client);
     }
 
-    /** Same as {@link #ingest} but runs on a background thread; called from the Slack event handler. */
+    /**
+     * Same as {@link #ingest} but runs on a background thread, so the Slack event can be acknowledged at once.
+     *
+     * @param channelId the Slack channel id
+     * @param messageTs the message timestamp
+     * @param userId the poster's Slack user id
+     * @param text the message text
+     * @param client the Slack client, used to fetch the permalink and the poster's name
+     */
     @Async
     @Transactional
     public void ingestAsync(String channelId, String messageTs, String userId, String text,

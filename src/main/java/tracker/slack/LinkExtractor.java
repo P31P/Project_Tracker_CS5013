@@ -14,7 +14,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
-/** Finds paper links in Slack message text and normalises them. Anything that isn't a paper link is ignored. */
+/**
+ * Finds paper links in Slack message text and normalises them. Anything that isn't a paper link is ignored.
+ */
 @Component
 public class LinkExtractor {
 
@@ -32,6 +34,12 @@ public class LinkExtractor {
             "doi.org", "dx.doi.org", "link.springer.com", "dl.acm.org", "onlinelibrary.wiley.com");
     private static final Set<String> TRACKING_PARAMS = Set.of("fbclid", "gclid", "mc_cid", "mc_eid", "igshid");
 
+    /**
+     * Finds the paper links in a message. Each paper appears once, in the order it was first posted.
+     *
+     * @param slackText the message text in Slack's format; may be {@code null}
+     * @return the paper links found, or an empty list
+     */
     public List<PaperLink> extract(String slackText) {
         if (slackText == null) {
             return List.of();

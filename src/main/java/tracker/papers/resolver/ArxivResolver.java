@@ -21,7 +21,9 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import tracker.data.PaperSource;
 
-/** Looks up arXiv links (https://arxiv.org/abs/...) through the arXiv API, which answers in Atom XML. */
+/**
+ * Looks up arXiv links ({@code https://arxiv.org/abs/...}) through the arXiv API, which answers in Atom XML.
+ */
 @Component
 @Order(2)
 public class ArxivResolver implements PaperResolver {
@@ -32,6 +34,11 @@ public class ArxivResolver implements PaperResolver {
 
     private final RestClient http;
 
+    /**
+     * Creates the resolver.
+     *
+     * @param baseUrl the arXiv API's address, from {@code papers.arxiv-url}; tests point it at a stub
+     */
     public ArxivResolver(@Value("${papers.arxiv-url:https://export.arxiv.org}") String baseUrl) {
         this.http = ResolverHttp.client(baseUrl);
     }
