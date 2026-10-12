@@ -8,4 +8,8 @@ public interface IdeaRepository extends JpaRepository<Idea, Long> {
 
     @EntityGraph(attributePaths = {"author", "project", "voters"})
     List<Idea> findAllByOrderByCreatedAtDescIdDesc();
+
+    List<Idea> findTop10ByOrderByCreatedAtDescIdDesc();
+
+    long countByProjectIsNull();
 }

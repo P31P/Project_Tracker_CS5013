@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,15 +52,17 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public List<ProjectSummary> list() {
-        Map<Long, Long> counts = new HashMap<>();
-        for (Object[] row : updates.countPerProject()) {
-            counts.put((Long) row[0], (Long) row[1]);
+        return summaries(project -> true);
+    }
+
+    /** Projects the user owns or is a member of. */
+    @Transactional(readOnly = true)
+    public List<ProjectSummary> involving(AppUser user) {
+        if (user == null) {
+            return List.of();
         }
-        return projects.findAllByOrderByUpdatedAtDescIdDesc().stream()
-                .map(p -> new ProjectSummary(p.getId(), p.getTitle(), p.getDescription(), p.getStatus(),
-                        CurrentUser.nameOf(p.getOwner()), p.getTags(), people(p.getMembers()), p.getCreatedAt(),
-                        p.getUpdatedAt(), counts.getOrDefault(p.getId(), 0L)))
-                .toList();
+        return summaries(project -> isUser(project.getOwner(), user)
+                || project.getMembers().stream().anyMatch(member -> isUser(member, user)));
     }
 
     @Transactional(readOnly = true)
@@ -139,6 +142,19 @@ public class ProjectService {
         return detail(project);
     }
 
+    private List<ProjectSummary> summaries(Predicate<Project> keep) {
+        Map<Long, Long> counts = new HashMap<>();
+        for (Object[] row : updates.countPerProject()) {
+            counts.put((Long) row[0], (Long) row[1]);
+        }
+        return projects.findAllByOrderByUpdatedAtDescIdDesc().stream()
+                .filter(keep)
+                .map(p -> new ProjectSummary(p.getId(), p.getTitle(), p.getDescription(), p.getStatus(),
+                        CurrentUser.nameOf(p.getOwner()), p.getTags(), people(p.getMembers()), p.getCreatedAt(),
+                        p.getUpdatedAt(), counts.getOrDefault(p.getId(), 0L)))
+                .toList();
+    }
+
     private Project find(Long id) {
         return projects.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No project with id " + id));
@@ -174,6 +190,11 @@ public class ProjectService {
                 .map(user -> new Person(user.getId(), CurrentUser.nameOf(user)))
                 .sorted(Comparator.comparing(Person::name, String.CASE_INSENSITIVE_ORDER))
                 .toList();
+    }
+
+    // the signed-in user is loaded outside this transaction, so compare by id rather than by object
+    private static boolean isUser(AppUser candidate, AppUser user) {
+        return candidate != null && candidate.getId().equals(user.getId());
     }
 
     /** "  #Vision, NLP, vision " becomes ["vision", "nlp"]. */

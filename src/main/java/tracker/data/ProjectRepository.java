@@ -9,4 +9,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     // loads owners and members in the same query instead of one query per project
     @EntityGraph(attributePaths = {"owner", "members"})
     List<Project> findAllByOrderByUpdatedAtDescIdDesc();
+
+    List<Project> findTop10ByOrderByCreatedAtDescIdDesc();
+
+    long countByStatus(ProjectStatus status);
 }
