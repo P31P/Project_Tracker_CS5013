@@ -1,57 +1,76 @@
+/* Geist, by Vercel (SIL Open Font License, see fonts/OFL.txt). Kept in the app so no page loads from outside. */
+@font-face {
+    font-family: "Geist";
+    src: url("../fonts/geist.woff2") format("woff2");
+    font-weight: 100 900;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Geist Mono";
+    src: url("../fonts/geist-mono.woff2") format("woff2");
+    font-weight: 100 900;
+    font-display: swap;
+}
+
+/* Neutrals are tinted slightly towards the accent's blue, so greys never look flat. */
 :root {
     color-scheme: light;
-    --bg: #f5f6f8;
-    --surface: #ffffff;
-    --surface-muted: #f0f2f5;
-    --text: #1a2030;
-    --muted: #5c6575;
-    --border: #e2e6ec;
-    --accent: #2457d6;
-    --accent-soft: #e9effd;
-    --on-accent: #ffffff;
-    --danger: #b42318;
-    --shadow: 0 1px 2px rgb(16 24 40 / 0.06), 0 4px 12px rgb(16 24 40 / 0.06);
-    --radius: 12px;
-    --radius-sm: 8px;
+    --bg: oklch(98.5% 0.003 262);
+    --surface: oklch(100% 0 0);
+    --surface-muted: oklch(96.6% 0.004 262);
+    --text: oklch(22% 0.015 262);
+    --muted: oklch(51% 0.015 262);
+    --border: oklch(91.8% 0.006 262);
+    --accent: oklch(52% 0.19 262);
+    --accent-soft: oklch(95.5% 0.025 262);
+    --on-accent: oklch(99% 0 0);
+    --danger: oklch(55% 0.19 27);
+    --shadow: 0 1px 2px oklch(22% 0.02 262 / 0.05), 0 8px 24px oklch(22% 0.02 262 / 0.06);
+    --radius: 10px;
+    --radius-sm: 7px;
     --content-width: 64rem;
     /* text lightness for tinted pills and avatars, so they read well in both themes */
     --tint-l: 36%;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    /* motion: quick and decelerating, so things feel responsive rather than animated */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --fast: 160ms;
+    font-family: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 /* Dark colours: "System" follows the computer's setting; a theme picked in the account menu
-   (data-theme on <html>, set by theme.js) wins over it. */
+   (data-theme on <html>, set by theme.js) wins over it. Depth comes from lighter surfaces, not shadows. */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
         color-scheme: dark;
-        --bg: #111418;
-        --surface: #1a1e25;
-        --surface-muted: #222731;
-        --text: #e6e9ef;
-        --muted: #9aa3b2;
-        --border: #2a303a;
-        --accent: #7ea2ff;
-        --accent-soft: #1f2a45;
-        --on-accent: #0e1630;
-        --danger: #ff8f85;
-        --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.25);
+        --bg: oklch(16.5% 0.008 262);
+        --surface: oklch(20.5% 0.009 262);
+        --surface-muted: oklch(24.5% 0.01 262);
+        --text: oklch(94.5% 0.005 262);
+        --muted: oklch(70% 0.012 262);
+        --border: oklch(29% 0.011 262);
+        --accent: oklch(72% 0.13 262);
+        --accent-soft: oklch(28% 0.05 262);
+        --on-accent: oklch(18% 0.03 262);
+        --danger: oklch(72% 0.15 27);
+        --shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px oklch(0% 0 0 / 0.25);
         --tint-l: 76%;
     }
 }
 
 :root[data-theme="dark"] {
     color-scheme: dark;
-    --bg: #111418;
-    --surface: #1a1e25;
-    --surface-muted: #222731;
-    --text: #e6e9ef;
-    --muted: #9aa3b2;
-    --border: #2a303a;
-    --accent: #7ea2ff;
-    --accent-soft: #1f2a45;
-    --on-accent: #0e1630;
-    --danger: #ff8f85;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.25);
+    --bg: oklch(16.5% 0.008 262);
+    --surface: oklch(20.5% 0.009 262);
+    --surface-muted: oklch(24.5% 0.01 262);
+    --text: oklch(94.5% 0.005 262);
+    --muted: oklch(70% 0.012 262);
+    --border: oklch(29% 0.011 262);
+    --accent: oklch(72% 0.13 262);
+    --accent-soft: oklch(28% 0.05 262);
+    --on-accent: oklch(18% 0.03 262);
+    --danger: oklch(72% 0.15 27);
+    --shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px oklch(0% 0 0 / 0.25);
     --tint-l: 76%;
 }
 
@@ -63,15 +82,31 @@
 
 body {
     margin: 0;
-    background: radial-gradient(80rem 24rem at 50% -10rem, var(--accent-soft), transparent 70%) no-repeat, var(--bg);
+    background: var(--bg);
     color: var(--text);
-    font-size: 1rem;
-    line-height: 1.5;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
 a {
     color: var(--accent);
     text-underline-offset: 0.15em;
+}
+
+::selection {
+    background: color-mix(in oklch, var(--accent) 22%, transparent);
+}
+
+/* numbers that sit in columns or change in place keep the same width */
+.filter-count,
+.vote-count,
+.stat-value,
+.board-count,
+.mini-votes,
+.card-meta-inline {
+    font-variant-numeric: tabular-nums;
 }
 
 :focus-visible {
@@ -104,7 +139,8 @@ a {
 }
 
 .brand-name {
-    font-weight: 650;
+    font-weight: 600;
+    letter-spacing: -0.01em;
     white-space: nowrap;
 }
 
@@ -268,8 +304,9 @@ a {
 
 .page-title {
     margin: 0;
-    font-size: 1.6rem;
-    letter-spacing: -0.01em;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
 }
 
 .page-description {
@@ -295,7 +332,7 @@ a {
     background: var(--accent);
     color: var(--on-accent);
     font: inherit;
-    font-weight: 600;
+    font-weight: 500;
     text-decoration: none;
     cursor: pointer;
 }
@@ -437,7 +474,9 @@ a {
 
 .card-title {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
     overflow-wrap: anywhere;
 }
 
@@ -498,7 +537,7 @@ a {
     padding: 0.1rem 0.3rem;
     border-radius: 4px;
     background: var(--surface-muted);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 0.88em;
 }
 
@@ -1545,8 +1584,9 @@ button.tag:hover {
 .hero-title {
     margin: 2rem 0 1rem;
     font-size: clamp(2rem, 4vw, 2.75rem);
-    line-height: 1.15;
-    letter-spacing: -0.02em;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.035em;
 }
 
 .hero-text {
