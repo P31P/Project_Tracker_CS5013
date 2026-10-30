@@ -7,5 +7,7 @@ public enum PaperSource {
     /** A registry such as Crossref or arXiv. */
     REGISTRY,
     /** The citation meta tags on the paper's own web page. */
-    META_TAGS
+    META_TAGS,
+    /** A person corrected the details by hand. */
+    MANUAL
 }

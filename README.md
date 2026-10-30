@@ -19,6 +19,7 @@ Signed-out API calls get `401`; pages redirect to the sign-in page (`/login.html
 - `GET /api/me`: email and name of the signed-in user
 - `GET /api/papers`: list all archived papers with title, authors, date and who first shared them in Slack (optional `?status=PENDING|RESOLVED|UNRESOLVED`)
 - `GET /api/papers/{id}`: single paper
+- `PATCH /api/papers/{id}`: correct a paper's details (`title` required; `authors`, `publishedOn` and `doi` replace what is stored). Marks it `RESOLVED` with source `MANUAL`. In the Papers tab, open a paper's **Details** and use **Fix details**
 - `GET /api/overview`: counts, the signed-in user's projects and the latest activity, for the Home tab
 - `GET /api/people`: everyone who can sign in (to add as project members)
 - `GET /api/projects`, `POST /api/projects` (`title` required; `description`, `status`, `tags`, `memberIds` optional), `GET`/`PATCH /api/projects/{id}`, `POST /api/projects/{id}/updates`, `POST /api/projects/{id}/links` (`url` must be http(s); `label` optional), `DELETE /api/projects/{id}/links/{linkId}`
