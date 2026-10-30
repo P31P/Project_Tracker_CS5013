@@ -1,5 +1,5 @@
 :root {
-    color-scheme: light dark;
+    color-scheme: light;
     --bg: #f5f6f8;
     --surface: #ffffff;
     --surface-muted: #f0f2f5;
@@ -19,8 +19,11 @@
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 }
 
+/* Dark colours: "System" follows the computer's setting; a theme picked in the account menu
+   (data-theme on <html>, set by theme.js) wins over it. */
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
+        color-scheme: dark;
         --bg: #111418;
         --surface: #1a1e25;
         --surface-muted: #222731;
@@ -34,6 +37,22 @@
         --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.25);
         --tint-l: 76%;
     }
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #111418;
+    --surface: #1a1e25;
+    --surface-muted: #222731;
+    --text: #e6e9ef;
+    --muted: #9aa3b2;
+    --border: #2a303a;
+    --accent: #7ea2ff;
+    --accent-soft: #1f2a45;
+    --on-accent: #0e1630;
+    --danger: #ff8f85;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.25);
+    --tint-l: 76%;
 }
 
 *,

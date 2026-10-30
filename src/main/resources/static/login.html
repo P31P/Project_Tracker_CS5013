@@ -4,6 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sign in · Raman Lab Tracker</title>
+    <script>
+        // apply the theme picked in the account menu before the page is drawn, so it never flashes
+        try {
+            const theme = localStorage.getItem('theme');
+            if (theme) {
+                document.documentElement.dataset.theme = theme;
+            }
+        } catch {
+            // storage is blocked, so the page follows the computer's setting
+        }
+    </script>
     <link rel="stylesheet" href="css/app.css">
 </head>
 <body class="login-page">
