@@ -71,12 +71,12 @@ See [SHARED.md](SHARED.md).
 - [ ] References: store Crossref's `reference` array in `paper_reference` when present; otherwise the UI says "references not available"
 - [x] Retry: an `attempts` column and a growing delay (`next_attempt_at`) between tries; after 3 failures the paper is marked UNRESOLVED. Nothing is ever deleted
 - [ ] `ResolutionLadderTest`: known DOI → exact registry data; meta-tag page → `META_TAGS`; bare PDF → `MODEL`; dead link → `UNRESOLVED`
-- [ ] Search migration: generated `tsvector` columns + GIN indexes on `project`, `idea`, `paper` → **H10**
-- [ ] `SearchService`: `websearch_to_tsquery`, `ts_rank`, `UNION ALL` across the three tables, `type` filter, top 50
-- [ ] `SearchController`: `GET /api/search?q=&type=`
+- [x] Search migration: generated `tsvector` columns + GIN indexes on `project`, `idea`, `paper` → **H10**
+- [x] `SearchService`: `websearch_to_tsquery`, `ts_rank`, `UNION ALL` across the three tables, `type` filter, top 50
+- [x] `SearchController`: `GET /api/search?q=&type=`
 - [ ] `search.js`: search bar in the header, results grouped by type, filter chips
 - [ ] Paper detail page + "Fix details" form → `PATCH /api/papers/{id}`, which sets `source = MANUAL`
-- [ ] `SearchServiceTest` on the seed data: one keyword across a project title, an idea and a paper returns all three
+- [x] `SearchServiceTest` on the seed data: one keyword across a project title, an idea and a paper returns all three
 
 ### Phase 3: Deploy (your half of G)
 
