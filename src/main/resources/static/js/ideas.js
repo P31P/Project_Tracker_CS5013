@@ -1,4 +1,5 @@
-// Ideas tab: capture an idea in seconds, upvote the ones worth doing, and turn one into a project when it's ready.
+// Ideas tab: capture an idea in seconds, discuss and upvote the ones worth doing, and turn one into a project
+// when it's ready.
 
 import { getJson, sendJson } from './api.js';
 import { icon } from './icons.js';
@@ -71,6 +72,16 @@ async function load(list) {
         ideas = ideas.map(idea => idea.id === updated.id ? updated : idea);
         draw();
     };
+    // ids of ideas whose discussion is open, so it stays open when the list is redrawn
+    const openDiscussions = new Set();
+    const toggleDiscussion = id => {
+        if (openDiscussions.has(id)) {
+            openDiscussions.delete(id);
+        } else {
+            openDiscussions.add(id);
+        }
+        draw();
+    };
     const draw = () => {
         const tagged = tag ? ideas.filter(idea => idea.tags.includes(tag)) : ideas;
         const open = tagged.filter(idea => idea.projectId === null);
@@ -88,14 +99,14 @@ async function load(list) {
             tag && el('div', 'active-filter', 'Showing ideas tagged ', tagPill(tag),
                 button(['close', 'Clear'], 'link-button', () => pickTag(null))),
             shown.length > 0
-                ? el('div', 'card-list', ...shown.map((idea, index) => ideaCard(idea, replace, pickTag, index)))
+                ? el('div', 'card-list', ...shown.map((idea, index) => ideaCard(idea, replace, pickTag, index, openDiscussions.has(idea.id), toggleDiscussion)))
                 : el('p', 'muted', 'Nothing here yet.'),
         ].filter(Boolean));
     };
     draw();
 }
 
-function ideaCard(idea, replace, pickTag, index) {
+function ideaCard(idea, replace, pickTag, index, discussionOpen, toggleDiscussion) {
     const card = el('article', 'card idea',
         voteButton(idea, replace),
         el('div', 'idea-body',
@@ -103,10 +114,58 @@ function ideaCard(idea, replace, pickTag, index) {
             idea.description && el('p', 'card-text', idea.description),
             tagList(idea.tags, pickTag),
             el('p', 'card-meta card-byline', idea.authorName && avatar(idea.authorName),
-                [idea.authorName, relativeTime(idea.createdAt)].filter(Boolean).join(' · '))),
-        el('div', 'idea-action', idea.projectId !== null ? projectLink(idea) : promoteButton(idea)));
+                [idea.authorName, relativeTime(idea.createdAt)].filter(Boolean).join(' · '),
+                discussionToggle(idea, discussionOpen, toggleDiscussion))),
+        el('div', 'idea-action', idea.projectId !== null ? projectLink(idea) : promoteButton(idea)),
+        discussionOpen && discussion(idea, replace));
     card.style.setProperty('--i', Math.min(index, 10));
     return card;
+}
+
+function discussionToggle(idea, open, toggleDiscussion) {
+    const count = idea.commentCount;
+    const label = count === 0 ? 'Discuss' : count === 1 ? '1 comment' : count + ' comments';
+    const toggle = button(['message', label], 'link-button discussion-toggle', () => toggleDiscussion(idea.id));
+    toggle.setAttribute('aria-expanded', String(open));
+    return toggle;
+}
+
+// the thread loads when the discussion is opened; posting redraws the card, which loads it again
+function discussion(idea, replace) {
+    const thread = el('ol', 'comments', el('li', 'muted comments-note', 'Loading the discussion…'));
+    getJson('/api/ideas/' + idea.id + '/comments')
+        .then(comments => thread.replaceChildren(...(comments.length > 0
+            ? comments.map(commentItem)
+            : [el('li', 'muted comments-note', 'No comments yet. Start the discussion.')])))
+        .catch(problem => thread.replaceChildren(el('li', 'notice notice-error', 'Could not load the discussion. '
+            + problem.message)));
+
+    const body = textarea('body', { placeholder: 'Add to the discussion…', rows: 2 });
+    body.setAttribute('aria-label', 'Comment');
+    const post = el('button', 'button button-small', icon('message', 16), 'Comment');
+    post.type = 'submit';
+    const form = el('form', 'comment-form', body, el('div', 'composer-actions', post));
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        post.disabled = true;
+        try {
+            await sendJson('POST', '/api/ideas/' + idea.id + '/comments', { body: body.value });
+            toast('Comment posted');
+            replace({ ...idea, commentCount: idea.commentCount + 1 });
+        } catch (problem) {
+            toast(problem.message, 'error');
+            post.disabled = false;
+        }
+    });
+    return el('section', 'discussion', thread, form);
+}
+
+function commentItem(comment) {
+    const name = comment.authorName || 'Someone';
+    return el('li', 'comment', avatar(name),
+        el('div', 'comment-body',
+            el('p', 'comment-meta', el('strong', null, name), ' · ' + relativeTime(comment.createdAt)),
+            el('p', 'prose', comment.body)));
 }
 
 function voteButton(idea, replace) {

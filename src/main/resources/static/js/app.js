@@ -69,7 +69,7 @@ signOutButton.addEventListener('click', () => {
 tabBar.setAttribute('role', 'tablist');
 registerTab('home', 'Home', renderHome, 'What is happening across the lab.', 'home');
 registerTab('projects', 'Projects', renderProjects, 'What the lab is working on, and how each project is moving.', 'folder');
-registerTab('ideas', 'Ideas', renderIdeas, 'Thoughts worth keeping. Upvote the good ones, and turn one into a project when it is ready.', 'bulb');
+registerTab('ideas', 'Ideas', renderIdeas, 'Thoughts worth keeping. Discuss and upvote the good ones, and turn one into a project when it is ready.', 'bulb');
 registerTab('papers', 'Papers', renderPapers, 'Papers shared in Slack, with their details filled in automatically.', 'paper');
 
 window.addEventListener('hashchange', showTab);

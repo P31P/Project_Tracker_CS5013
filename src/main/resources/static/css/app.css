@@ -1136,6 +1136,49 @@ button.tag:hover {
     display: flex;
 }
 
+.discussion-toggle {
+    margin-left: 0.35rem;
+    font-size: 0.85rem;
+}
+
+.discussion {
+    grid-column: 1 / -1;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.comments {
+    display: grid;
+    gap: 0.85rem;
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+}
+
+.comment {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+}
+
+.comment-body {
+    min-width: 0;
+}
+
+.comment-meta {
+    margin: 0 0 0.15rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.comment-meta strong {
+    color: var(--text);
+}
+
+.comments-note {
+    font-size: 0.9rem;
+}
+
 .card-byline {
     display: flex;
     align-items: center;
