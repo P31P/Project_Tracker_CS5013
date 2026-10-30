@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Raman Lab Tracker</title>
     <script>
-        // apply the theme picked in the account menu before the page is drawn, so it never flashes
+        // apply the theme picked with the header's theme switch before the page is drawn, so it never flashes
         try {
             const theme = localStorage.getItem('theme');
             if (theme) {
@@ -24,15 +24,12 @@
             <span class="brand-name">Raman Lab Tracker</span>
         </a>
         <nav id="tabs" class="tabs" aria-label="Sections"></nav>
+        <div id="theme-picker" class="theme-picker"></div>
         <details class="user-menu">
             <summary id="avatar" class="avatar" aria-label="Account"></summary>
             <div class="menu">
                 <p id="user-name" class="menu-name"></p>
                 <p id="user-email" class="menu-email"></p>
-                <div class="menu-section">
-                    <p class="menu-label">Theme</p>
-                    <div id="theme-picker"></div>
-                </div>
                 <button id="sign-out" type="button" class="menu-item">Sign out</button>
             </div>
         </details>

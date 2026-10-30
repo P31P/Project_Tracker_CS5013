@@ -38,7 +38,7 @@
     font-family: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-/* Dark colours: "System" follows the computer's setting; a theme picked in the account menu
+/* Dark colours: "System" follows the computer's setting; a theme picked with the header's switch
    (data-theme on <html>, set by theme.js) wins over it. Depth comes from lighter surfaces, not shadows. */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -195,6 +195,21 @@ a {
     border-bottom-color: var(--text);
 }
 
+/* Theme switch, beside the account menu */
+
+.theme-switch {
+    padding: 0.15rem;
+}
+
+.theme-switch .segment {
+    padding: 0.3rem 0.45rem;
+}
+
+/* the header spaces its parts 2rem apart; the switch and the avatar belong together */
+.theme-picker + .user-menu {
+    margin-left: -1.25rem;
+}
+
 /* User menu */
 
 .user-menu {
@@ -255,30 +270,6 @@ a {
     color: var(--muted);
     font-size: 0.85rem;
     overflow-wrap: anywhere;
-}
-
-.menu-section {
-    margin: 0 0.75rem 0.75rem;
-}
-
-.menu-label {
-    margin: 0 0 0.35rem;
-    color: var(--muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.menu-section .segmented {
-    display: flex;
-}
-
-.menu-section .segment {
-    flex: 1;
-    justify-content: center;
-    padding: 0.35rem 0.5rem;
-    font-size: 0.85rem;
 }
 
 .menu-item {
@@ -1731,8 +1722,12 @@ button.tag {
         padding: 0.6rem 1rem 0;
     }
 
-    .user-menu {
+    .theme-picker {
         margin-left: auto;
+    }
+
+    .theme-picker + .user-menu {
+        margin-left: -0.5rem;
     }
 
     .tabs {
