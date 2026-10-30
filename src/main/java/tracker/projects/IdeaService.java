@@ -1,6 +1,8 @@
 package tracker.projects;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,9 +11,12 @@ import tracker.auth.CurrentUser;
 import tracker.data.AppUser;
 import tracker.data.AppUserRepository;
 import tracker.data.Idea;
+import tracker.data.IdeaComment;
+import tracker.data.IdeaCommentRepository;
 import tracker.data.IdeaRepository;
 import tracker.data.ProjectRepository;
 import tracker.data.ProjectStatus;
+import tracker.projects.ProjectDtos.CommentView;
 import tracker.projects.ProjectDtos.IdeaRequest;
 import tracker.projects.ProjectDtos.IdeaView;
 import tracker.projects.ProjectDtos.ProjectDetail;
@@ -26,6 +31,7 @@ public class IdeaService {
     private final ProjectRepository projects;
     private final AppUserRepository users;
     private final ProjectService projectService;
+    private final IdeaCommentRepository comments;
 
     /**
      * Creates the service.
@@ -34,13 +40,15 @@ public class IdeaService {
      * @param projects where projects are stored
      * @param users where users are stored
      * @param projectService creates the project when an idea is promoted
+     * @param comments where the ideas' discussions are stored
      */
     public IdeaService(IdeaRepository ideas, ProjectRepository projects, AppUserRepository users,
-                       ProjectService projectService) {
+                       ProjectService projectService, IdeaCommentRepository comments) {
         this.ideas = ideas;
         this.projects = projects;
         this.users = users;
         this.projectService = projectService;
+        this.comments = comments;
     }
 
     /**
@@ -51,7 +59,13 @@ public class IdeaService {
      */
     @Transactional(readOnly = true)
     public List<IdeaView> list(AppUser viewer) {
-        return ideas.findAllByOrderByCreatedAtDescIdDesc().stream().map(idea -> view(idea, viewer)).toList();
+        Map<Long, Long> commentCounts = new HashMap<>();
+        for (Object[] row : comments.countPerIdea()) {
+            commentCounts.put((Long) row[0], (Long) row[1]);
+        }
+        return ideas.findAllByOrderByCreatedAtDescIdDesc().stream()
+                .map(idea -> view(idea, viewer, commentCounts.getOrDefault(idea.getId(), 0L)))
+                .toList();
     }
 
     /**
@@ -66,7 +80,7 @@ public class IdeaService {
         Idea idea = new Idea(ProjectService.required(request.title(), "An idea needs a title"),
                 ProjectService.blankToNull(request.description()), author);
         idea.setTags(ProjectService.tags(request.tags()));
-        return view(ideas.save(idea), author);
+        return view(ideas.save(idea), author, 0);
     }
 
     /**
@@ -82,7 +96,7 @@ public class IdeaService {
         if (voter != null && !votedBy(idea, voter)) {
             idea.getVoters().add(users.getReferenceById(voter.getId()));
         }
-        return view(idea, voter);
+        return view(idea, voter, comments.countByIdeaId(id));
     }
 
     /**
@@ -98,7 +112,7 @@ public class IdeaService {
         if (voter != null) {
             idea.getVoters().removeIf(user -> user.getId().equals(voter.getId()));
         }
-        return view(idea, voter);
+        return view(idea, voter, comments.countByIdeaId(id));
     }
 
     /**
@@ -122,6 +136,34 @@ public class IdeaService {
         return project;
     }
 
+    /**
+     * Lists an idea's discussion, oldest first.
+     *
+     * @param id the idea's id
+     * @return the comments
+     * @throws ResponseStatusException {@code 404} if there is no idea with this id
+     */
+    @Transactional(readOnly = true)
+    public List<CommentView> comments(Long id) {
+        find(id);
+        return comments.findByIdeaIdOrderByCreatedAtAscIdAsc(id).stream().map(IdeaService::commentView).toList();
+    }
+
+    /**
+     * Adds a comment to an idea's discussion.
+     *
+     * @param id the idea's id
+     * @param body the comment
+     * @param author who wrote it; may be {@code null}
+     * @return the new comment
+     * @throws ResponseStatusException {@code 404} if there is no such idea, or {@code 400} if the comment is blank
+     */
+    public CommentView addComment(Long id, String body, AppUser author) {
+        Idea idea = find(id);
+        IdeaComment comment = new IdeaComment(idea, author, ProjectService.required(body, "A comment can't be empty"));
+        return commentView(comments.save(comment));
+    }
+
     private Idea find(Long id) {
         return ideas.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No idea with id " + id));
@@ -132,11 +174,16 @@ public class IdeaService {
         return viewer != null && idea.getVoters().stream().anyMatch(user -> user.getId().equals(viewer.getId()));
     }
 
-    private static IdeaView view(Idea idea, AppUser viewer) {
+    private static IdeaView view(Idea idea, AppUser viewer, long commentCount) {
         return new IdeaView(idea.getId(), idea.getTitle(), idea.getDescription(), CurrentUser.nameOf(idea.getAuthor()),
                 idea.getTags(), idea.getCreatedAt(),
                 idea.getProject() == null ? null : idea.getProject().getId(),
                 idea.getProject() == null ? null : idea.getProject().getTitle(),
-                idea.getVoters().size(), votedBy(idea, viewer));
+                idea.getVoters().size(), votedBy(idea, viewer), commentCount);
+    }
+
+    private static CommentView commentView(IdeaComment comment) {
+        return new CommentView(comment.getId(), comment.getBody(), CurrentUser.nameOf(comment.getAuthor()),
+                comment.getCreatedAt());
     }
 }

@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import tracker.auth.CurrentUser;
+import tracker.projects.ProjectDtos.CommentRequest;
+import tracker.projects.ProjectDtos.CommentView;
 import tracker.projects.ProjectDtos.IdeaRequest;
 import tracker.projects.ProjectDtos.IdeaView;
 import tracker.projects.ProjectDtos.ProjectDetail;
@@ -96,5 +98,31 @@ public class IdeaController {
     @ResponseStatus(HttpStatus.CREATED)
     public ProjectDetail promote(@PathVariable Long id, @AuthenticationPrincipal OidcUser user) {
         return ideas.promote(id, currentUser.of(user));
+    }
+
+    /**
+     * Lists an idea's discussion, oldest first. Handles {@code GET /api/ideas/{id}/comments}.
+     *
+     * @param id the idea's id
+     * @return the comments
+     */
+    @GetMapping("/{id}/comments")
+    public List<CommentView> comments(@PathVariable Long id) {
+        return ideas.comments(id);
+    }
+
+    /**
+     * Adds a comment to an idea's discussion. Handles {@code POST /api/ideas/{id}/comments} and answers {@code 201}.
+     *
+     * @param id the idea's id
+     * @param request the comment
+     * @param user the signed-in user, who becomes the author
+     * @return the new comment
+     */
+    @PostMapping("/{id}/comments")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CommentView addComment(@PathVariable Long id, @RequestBody CommentRequest request,
+                                  @AuthenticationPrincipal OidcUser user) {
+        return ideas.addComment(id, request.body(), currentUser.of(user));
     }
 }

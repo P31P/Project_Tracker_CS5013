@@ -137,9 +137,29 @@ public final class ProjectDtos {
      * @param projectTitle that project's title, or {@code null}
      * @param voteCount how many people voted for it
      * @param votedByMe whether the signed-in user voted for it
+     * @param commentCount how many comments its discussion has
      */
     public record IdeaView(Long id, String title, String description, String authorName, List<String> tags,
                            OffsetDateTime createdAt, Long projectId, String projectTitle, int voteCount,
-                           boolean votedByMe) {
+                           boolean votedByMe, long commentCount) {
+    }
+
+    /**
+     * A comment to add to an idea's discussion.
+     *
+     * @param body the comment; must not be blank
+     */
+    public record CommentRequest(String body) {
+    }
+
+    /**
+     * A comment in an idea's discussion.
+     *
+     * @param id the comment's id
+     * @param body the text
+     * @param authorName who wrote it, or {@code null}
+     * @param createdAt when it was written
+     */
+    public record CommentView(Long id, String body, String authorName, OffsetDateTime createdAt) {
     }
 }
