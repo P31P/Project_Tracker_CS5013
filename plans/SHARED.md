@@ -46,6 +46,7 @@ What both of you depend on. Individual tasks are in [PRIYAL.md](PRIYAL.md) and [
 | `project_link` | project_id, label (not blank), url (must start `http://` or `https://`), created_at | V7 |
 | `idea` (changed) | added tags `text[]` | V8 |
 | `idea_vote` | idea_id, user_id (primary key on both, so one vote per person), created_at | V8 |
+| `project`, `idea`, `paper` (added) | `search` generated `tsvector` with a GIN index (title weighted highest, then description or authors, then tags or DOI); `immutable_join()` function | V9 |
 
 ### Planned (added by the feature that needs it)
 
