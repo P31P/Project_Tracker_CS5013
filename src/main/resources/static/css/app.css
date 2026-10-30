@@ -948,14 +948,15 @@ textarea.input {
 }
 
 .tag {
-    padding: 0.1rem 0.55rem;
+    padding: 0.1rem 0.5rem;
     border: 0;
     border-radius: 999px;
-    background: hsl(var(--hue) 70% 55% / 0.14);
-    color: hsl(var(--hue) 55% var(--tint-l));
+    background: var(--surface-muted);
+    /* the colour stays on the text only, so a tag keeps its identity without shouting */
+    color: hsl(var(--hue) 45% var(--tint-l));
     font: inherit;
     font-size: 0.78rem;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 button.tag {
@@ -964,7 +965,7 @@ button.tag {
 
 @media (hover: hover) and (pointer: fine) {
     button.tag:hover {
-        background: hsl(var(--hue) 70% 55% / 0.26);
+        background: color-mix(in oklch, var(--surface-muted), var(--text) 7%);
     }
 }
 
