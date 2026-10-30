@@ -206,6 +206,30 @@ a {
     overflow-wrap: anywhere;
 }
 
+.menu-section {
+    margin: 0 0.75rem 0.75rem;
+}
+
+.menu-label {
+    margin: 0 0 0.35rem;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.menu-section .segmented {
+    display: flex;
+}
+
+.menu-section .segment {
+    flex: 1;
+    justify-content: center;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+}
+
 .menu-item {
     display: flex;
     align-items: center;

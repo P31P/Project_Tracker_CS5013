@@ -4,6 +4,7 @@ import { icon } from './icons.js';
 import { renderIdeas } from './ideas.js';
 import { renderPapers } from './papers.js';
 import { renderProjects } from './projects.js';
+import { renderThemePicker } from './theme.js';
 import { el, hueOf, initials, toast } from './ui.js';
 
 const tabBar = document.getElementById('tabs');
@@ -56,6 +57,8 @@ async function showUser() {
         // only the account menu needs this; the tabs work without it
     }
 }
+
+renderThemePicker(document.getElementById('theme-picker'));
 
 const signOutButton = document.getElementById('sign-out');
 signOutButton.prepend(icon('logout', 16));
