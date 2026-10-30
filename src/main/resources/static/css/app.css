@@ -127,15 +127,15 @@ a {
 
 .logo {
     display: grid;
-    width: 2rem;
-    height: 2rem;
+    width: 1.75rem;
+    height: 1.75rem;
     place-items: center;
     border-radius: var(--radius-sm);
-    background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #8b5cf6));
-    color: var(--on-accent);
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
+    background: var(--text);
+    color: var(--bg);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
 }
 
 .brand-name {
@@ -155,8 +155,8 @@ a {
     gap: 2rem;
     height: 3.75rem;
     padding: 0 1.5rem;
-    background: color-mix(in srgb, var(--surface) 88%, transparent);
-    backdrop-filter: blur(8px);
+    background: color-mix(in oklch, var(--bg) 82%, transparent);
+    backdrop-filter: blur(12px) saturate(1.4);
     border-bottom: 1px solid var(--border);
 }
 
@@ -188,9 +188,8 @@ a {
 }
 
 .tab[aria-selected="true"] {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-    font-weight: 600;
+    color: var(--text);
+    border-bottom-color: var(--text);
 }
 
 /* User menu */
@@ -418,10 +417,9 @@ a {
 }
 
 .filter-chip[aria-pressed="true"] {
-    border-color: var(--accent);
-    background: var(--accent-soft);
-    color: var(--accent);
-    font-weight: 600;
+    border-color: var(--text);
+    background: var(--text);
+    color: var(--bg);
 }
 
 .filter-count {
@@ -579,16 +577,27 @@ a {
 /* Status chips: hue changes per status, transparency keeps them readable in both themes */
 
 .status {
+    display: inline-flex;
     flex-shrink: 0;
-    padding: 0.15rem 0.6rem;
-    border: 1px solid hsl(var(--hue) 60% 50% / 0.45);
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.1rem 0.55rem 0.1rem 0.45rem;
+    border: 1px solid var(--border);
     border-radius: 999px;
-    background: hsl(var(--hue) 70% 50% / 0.14);
-    font-size: 0.78rem;
-    font-weight: 600;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.75rem;
+    font-weight: 500;
     white-space: nowrap;
     text-decoration: none;
-    color: inherit;
+}
+
+.status::before {
+    content: "";
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: hsl(var(--hue) 65% 50%);
 }
 
 .status-planning { --hue: 265; }
@@ -632,15 +641,14 @@ a {
 
 .empty-mark {
     display: grid;
-    width: 3rem;
-    height: 3rem;
+    width: 2.75rem;
+    height: 2.75rem;
     margin: 0 auto 1rem;
     place-items: center;
-    border-radius: 50%;
-    background: var(--accent-soft);
-    color: var(--accent);
-    font-size: 1.5rem;
-    font-weight: 600;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--muted);
 }
 
 .empty-title {
@@ -1490,12 +1498,13 @@ button.tag:hover {
 .feed-icon {
     display: grid;
     flex-shrink: 0;
-    width: 2rem;
-    height: 2rem;
+    width: 1.9rem;
+    height: 1.9rem;
     place-items: center;
+    border: 1px solid var(--border);
     border-radius: 50%;
-    background: hsl(var(--hue) 70% 55% / 0.15);
-    color: hsl(var(--hue) 55% var(--tint-l));
+    background: var(--surface);
+    color: var(--muted);
 }
 
 .feed-note { --hue: 222; }
@@ -1565,9 +1574,7 @@ button.tag:hover {
 
 .login-page {
     min-height: 100vh;
-    background:
-        radial-gradient(60rem 30rem at 0% 0%, var(--accent-soft), transparent 60%),
-        var(--bg);
+    background: var(--bg);
 }
 
 .login-layout {
@@ -1606,8 +1613,6 @@ button.tag:hover {
 .features li {
     display: grid;
     gap: 0.1rem;
-    padding-left: 1rem;
-    border-left: 3px solid var(--accent);
 }
 
 .features span {
