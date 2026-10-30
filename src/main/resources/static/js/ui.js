@@ -78,6 +78,8 @@ export function relativeTime(isoDateTime) {
 export function toast(message, kind = 'success') {
     const note = el('div', 'toast toast-' + kind, message);
     document.getElementById('toasts').append(note);
+    // fade out first (see .toast-leaving in app.css), then remove
+    setTimeout(() => note.classList.add('toast-leaving'), 3800);
     setTimeout(() => note.remove(), 4000);
 }
 

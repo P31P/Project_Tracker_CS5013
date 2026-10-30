@@ -181,10 +181,13 @@ a {
     font-weight: 500;
     white-space: nowrap;
     cursor: pointer;
+    transition: color var(--fast) var(--ease-out);
 }
 
-.tab:hover {
-    color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+    .tab:hover {
+        color: var(--text);
+    }
 }
 
 .tab[aria-selected="true"] {
@@ -227,6 +230,19 @@ a {
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
+}
+
+/* the menu grows out of the avatar instead of popping in */
+.menu {
+    transform-origin: top right;
+    transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
+}
+
+@starting-style {
+    .user-menu[open] .menu {
+        opacity: 0;
+        transform: scale(0.97) translateY(-4px);
+    }
 }
 
 .menu-name {
@@ -280,8 +296,10 @@ a {
     cursor: pointer;
 }
 
-.menu-item:hover {
-    background: var(--surface-muted);
+@media (hover: hover) and (pointer: fine) {
+    .menu-item:hover {
+        background: var(--surface-muted);
+    }
 }
 
 /* Page */
@@ -336,8 +354,10 @@ a {
     cursor: pointer;
 }
 
-.button:hover {
-    filter: brightness(1.08);
+@media (hover: hover) and (pointer: fine) {
+    .button:hover {
+        background: color-mix(in oklch, var(--accent) 88%, var(--text));
+    }
 }
 
 .button-secondary {
@@ -346,9 +366,40 @@ a {
     color: var(--text);
 }
 
-.button-secondary:hover {
-    filter: none;
-    background: var(--surface-muted);
+@media (hover: hover) and (pointer: fine) {
+    .button-secondary:hover {
+        background: var(--surface-muted);
+    }
+}
+
+/* Controls give a small press, so a click feels physical. */
+.button,
+.segment,
+.filter-chip,
+.vote,
+.icon-button,
+.link-button,
+button.tag {
+    transition:
+        transform var(--fast) var(--ease-out),
+        background-color var(--fast) var(--ease-out),
+        border-color var(--fast) var(--ease-out),
+        color var(--fast) var(--ease-out);
+}
+
+.button:active:not(:disabled),
+.segment:active,
+.filter-chip:active,
+.vote:active:not(:disabled),
+.icon-button:active,
+.link-button:active,
+button.tag:active {
+    transform: scale(0.97);
+}
+
+.button:disabled {
+    opacity: 0.6;
+    cursor: default;
 }
 
 /* Toasts */
@@ -363,11 +414,26 @@ a {
 }
 
 .toast {
-    padding: 0.75rem 1rem;
-    border-left: 4px solid var(--accent);
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
     border-radius: var(--radius-sm);
     background: var(--surface);
     box-shadow: var(--shadow);
+    font-size: 0.9rem;
+    transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+
+@starting-style {
+    .toast {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
+.toast-leaving {
+    opacity: 0;
+    transform: translateY(4px);
 }
 
 .toast-error {
@@ -454,13 +520,14 @@ a {
 .card-link {
     position: relative;
     text-decoration: none;
-    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    transition: border-color var(--fast) var(--ease-out), box-shadow var(--fast) var(--ease-out);
 }
 
-.card-link:hover {
-    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-    box-shadow: var(--shadow);
-    transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+    .card-link:hover {
+        border-color: color-mix(in oklch, var(--text) 18%, var(--border));
+        box-shadow: var(--shadow);
+    }
 }
 
 .card-head {
@@ -735,6 +802,18 @@ textarea.input {
     box-shadow: var(--shadow);
 }
 
+/* dialogs open from 96% size and fade in; never from nothing */
+.dialog[open] {
+    transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+
+@starting-style {
+    .dialog[open] {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+}
+
 .dialog::backdrop {
     background: rgb(10 14 20 / 0.45);
 }
@@ -883,8 +962,10 @@ button.tag {
     cursor: pointer;
 }
 
-button.tag:hover {
-    background: hsl(var(--hue) 70% 55% / 0.26);
+@media (hover: hover) and (pointer: fine) {
+    button.tag:hover {
+        background: hsl(var(--hue) 70% 55% / 0.26);
+    }
 }
 
 /* Small controls */
@@ -945,10 +1026,12 @@ button.tag:hover {
     cursor: pointer;
 }
 
-.link-button:hover,
-.icon-button:hover {
-    background: var(--surface-muted);
-    color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+    .link-button:hover,
+    .icon-button:hover {
+        background: var(--surface-muted);
+        color: var(--text);
+    }
 }
 
 .button-small {
@@ -982,34 +1065,6 @@ button.tag:hover {
 .section-title {
     margin: 1.75rem 0 0.75rem;
     font-size: 1.05rem;
-}
-
-/* Cards open on entry, a little after one another */
-
-.card-list > .card,
-.stat,
-.home-section {
-    animation: rise 0.35s ease backwards;
-    animation-delay: calc(var(--i, 0) * 35ms);
-}
-
-@keyframes rise {
-    from {
-        opacity: 0;
-        transform: translateY(6px);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .card-list > .card,
-    .stat,
-    .home-section {
-        animation: none;
-    }
-
-    .card-link {
-        transition: none;
-    }
 }
 
 /* Project cards: the title link covers the whole card */
@@ -1239,8 +1294,10 @@ button.tag:hover {
     cursor: pointer;
 }
 
-.member-option:hover {
-    background: var(--surface-muted);
+@media (hover: hover) and (pointer: fine) {
+    .member-option:hover {
+        background: var(--surface-muted);
+    }
 }
 
 /* Ideas */
@@ -1315,7 +1372,6 @@ button.tag:hover {
     color: var(--muted);
     font: inherit;
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
 
 .vote-inner {
@@ -1328,9 +1384,11 @@ button.tag:hover {
     font-weight: 700;
 }
 
-.vote:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+    .vote:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
 }
 
 .vote[aria-pressed="true"] {
@@ -1372,8 +1430,10 @@ button.tag:hover {
     transition: background-color var(--fast) var(--ease-out);
 }
 
-.stat:hover {
-    background: var(--surface-muted);
+@media (hover: hover) and (pointer: fine) {
+    .stat:hover {
+        background: var(--surface-muted);
+    }
 }
 
 .stat-label {
@@ -1429,8 +1489,10 @@ button.tag:hover {
     border-top: 1px solid var(--border);
 }
 
-.mini-project:hover {
-    background: var(--surface-muted);
+@media (hover: hover) and (pointer: fine) {
+    .mini-project:hover {
+        background: var(--surface-muted);
+    }
 }
 
 .mini-votes {
@@ -1514,8 +1576,10 @@ button.tag:hover {
     text-decoration: none;
 }
 
-.feed-target:hover {
-    color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+    .feed-target:hover {
+        color: var(--accent);
+    }
 }
 
 .feed-excerpt {
@@ -1693,5 +1757,15 @@ button.tag:hover {
 
     .tab .icon {
         display: none;
+    }
+}
+
+/* Less motion when the computer asks for it: changes still happen, just instantly. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
     }
 }
