@@ -3,6 +3,7 @@
 
 import { getJson, sendJson } from './api.js';
 import { icon } from './icons.js';
+import { markdown, markdownHint } from './markdown.js';
 import {
     avatar, button, el, emptyState, errorState, filterChips, input, relativeTime, segmented, skeleton, splitTags,
     tagList, tagPill, textarea, toast,
@@ -22,7 +23,8 @@ function composer(onSaved) {
     description.setAttribute('aria-label', 'Details');
     const tags = input('tags', { placeholder: 'Tags, separated by commas (optional)' });
     tags.setAttribute('aria-label', 'Tags');
-    const more = el('details', 'more', el('summary', null, 'Add details'), el('div', 'more-fields', description, tags));
+    const more = el('details', 'more', el('summary', null, 'Add details'),
+        el('div', 'more-fields', description, markdownHint(), tags));
     const save = el('button', 'button', icon('bulb', 16), 'Save idea');
     save.type = 'submit';
     const form = el('form', 'card composer composer-idea', title, more, el('div', 'composer-actions', save));
@@ -111,7 +113,7 @@ function ideaCard(idea, replace, pickTag, index, discussionOpen, toggleDiscussio
         voteButton(idea, replace),
         el('div', 'idea-body',
             el('h3', 'card-title', idea.title),
-            idea.description && el('p', 'card-text', idea.description),
+            idea.description && markdown(idea.description),
             tagList(idea.tags, pickTag),
             el('p', 'card-meta card-byline', idea.authorName && avatar(idea.authorName),
                 [idea.authorName, relativeTime(idea.createdAt)].filter(Boolean).join(' · '),
@@ -144,7 +146,7 @@ function discussion(idea, replace) {
     body.setAttribute('aria-label', 'Comment');
     const post = el('button', 'button button-small', icon('message', 16), 'Comment');
     post.type = 'submit';
-    const form = el('form', 'comment-form', body, el('div', 'composer-actions', post));
+    const form = el('form', 'comment-form', body, el('div', 'composer-actions', markdownHint(), post));
     form.addEventListener('submit', async event => {
         event.preventDefault();
         post.disabled = true;
@@ -165,7 +167,7 @@ function commentItem(comment) {
     return el('li', 'comment', avatar(name),
         el('div', 'comment-body',
             el('p', 'comment-meta', el('strong', null, name), ' · ' + relativeTime(comment.createdAt)),
-            el('p', 'prose', comment.body)));
+            markdown(comment.body)));
 }
 
 function voteButton(idea, replace) {

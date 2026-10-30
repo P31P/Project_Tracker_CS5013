@@ -2,6 +2,7 @@
 
 import { getJson } from './api.js';
 import { icon } from './icons.js';
+import { plainText } from './markdown.js';
 import { newProjectDialog, statusChip } from './projects.js';
 import { avatarStack, button, el, emptyState, errorState, relativeTime, skeleton } from './ui.js';
 
@@ -117,7 +118,7 @@ function feed(items) {
             el('div', 'feed-body',
                 el('p', 'feed-text', item.who && el('strong', null, item.who), item.who ? ' ' + item.action + ' ' : item.action + ': ',
                     target),
-                item.excerpt && el('p', 'feed-excerpt clamp', item.excerpt),
+                item.excerpt && el('p', 'feed-excerpt clamp', plainText(item.excerpt)),
                 el('p', 'feed-time', relativeTime(item.at))));
     }));
 }

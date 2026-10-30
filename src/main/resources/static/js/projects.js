@@ -2,6 +2,7 @@
 
 import { getJson, sendJson } from './api.js';
 import { icon } from './icons.js';
+import { markdown, markdownHint, plainText } from './markdown.js';
 import {
     avatar, avatarStack, button, el, emptyState, errorState, field, filterChips, formDialog, input, relativeTime,
     segmented, select, skeleton, splitTags, tagList, tagPill, textarea, toast,
@@ -100,7 +101,7 @@ function projectCard(project, pickTag, index = 0) {
     link.href = '#projects/' + project.id;
     const card = el('article', 'card card-link project-card',
         el('div', 'card-head', el('h3', 'card-title', link), statusChip(project.status)),
-        project.description && el('p', 'card-text clamp', project.description),
+        project.description && el('p', 'card-text clamp', plainText(project.description)),
         tagList(project.tags, pickTag),
         el('div', 'card-foot',
             avatarStack(project.members),
@@ -205,6 +206,7 @@ export async function newProjectDialog() {
     const more = el('details', 'more',
         el('summary', null, 'More details (optional)'),
         field('Description', textarea('description', { placeholder: 'What is it about? Any context.' })),
+        markdownHint(),
         field('Status', select('status', STATUSES, 'ACTIVE')),
         field('Tags', input('tags', { placeholder: 'e.g. genomics, ml' })),
         everyone.length > 0 && field('Teammates (you are added automatically)', picker));
@@ -225,6 +227,7 @@ async function editDialog(project, redraw) {
     formDialog('Edit project', [
         field('Title', input('title', { value: project.title, required: true })),
         field('Description', textarea('description', { value: project.description || '', rows: 5 })),
+        markdownHint(),
         field('Tags', input('tags', { value: project.tags.join(', '), placeholder: 'e.g. genomics, ml' })),
         picker && field('Members', picker),
     ].filter(Boolean), 'Save', async values => {
@@ -262,7 +265,7 @@ async function renderProject(container, page, id) {
             el('span', 'muted', [project.ownerName && 'Owned by ' + project.ownerName,
                 'started ' + relativeTime(project.createdAt)].filter(Boolean).join(' · ')));
         page.actions.replaceChildren(button(['edit', 'Edit'], 'button button-secondary', () => editDialog(project, redraw)));
-        const about = project.description && el('div', 'card', el('p', 'prose', project.description));
+        const about = project.description && el('div', 'card', markdown(project.description));
         container.replaceChildren(el('div', 'detail-layout',
             el('div', 'detail-main', about, composer(project, redraw),
                 el('h2', 'section-title', 'Timeline'), timeline(project.timeline)),
@@ -362,7 +365,7 @@ function composer(project, redraw) {
     const body = textarea('body', { placeholder: 'What has changed? Results, blockers, next steps…', rows: 3 });
     const post = el('button', 'button', icon('message', 16), 'Post update');
     post.type = 'submit';
-    const form = el('form', 'card composer', body, el('div', 'composer-actions', post));
+    const form = el('form', 'card composer', body, el('div', 'composer-actions', markdownHint(), post));
     form.addEventListener('submit', async event => {
         event.preventDefault();
         post.disabled = true;
@@ -386,5 +389,5 @@ function timeline(entries) {
         el('p', 'timeline-meta',
             avatar(entry.authorName || 'Someone'),
             el('strong', null, entry.authorName || 'Someone'), ' · ' + relativeTime(entry.createdAt)),
-        el('p', entry.kind === 'STATUS' ? 'timeline-change' : 'prose', entry.body))));
+        entry.kind === 'STATUS' ? el('p', 'timeline-change', entry.body) : markdown(entry.body))));
 }

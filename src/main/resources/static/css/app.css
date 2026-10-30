@@ -460,6 +460,77 @@ a {
     font-size: 0.85rem;
 }
 
+/* Rendered Markdown (markdown.js): compact, so it sits well inside cards */
+
+.markdown {
+    overflow-wrap: anywhere;
+}
+
+.markdown > * {
+    margin: 0.5rem 0 0;
+}
+
+.markdown > :first-child {
+    margin-top: 0;
+}
+
+.markdown ul,
+.markdown ol {
+    padding-left: 1.4rem;
+}
+
+.markdown li + li {
+    margin-top: 0.15rem;
+}
+
+.markdown .md-heading {
+    margin-top: 0.85rem;
+    font-size: 1rem;
+}
+
+.markdown blockquote {
+    padding-left: 0.85rem;
+    border-left: 3px solid var(--border);
+    color: var(--muted);
+}
+
+.markdown code {
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    background: var(--surface-muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em;
+}
+
+.markdown pre {
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-muted);
+    overflow-x: auto;
+}
+
+.markdown pre code {
+    padding: 0;
+    background: none;
+}
+
+.idea-body .markdown {
+    margin-top: 0.35rem;
+    color: var(--muted);
+}
+
+.markdown-hint {
+    margin-right: auto;
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.dialog-form .markdown-hint,
+.more-fields .markdown-hint {
+    display: block;
+    margin-top: 0.3rem;
+}
+
 .prose {
     margin: 0;
     white-space: pre-wrap;
@@ -648,7 +719,9 @@ textarea.input {
 
 .composer-actions {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
+    gap: 1rem;
     margin-top: 0.75rem;
 }
 
