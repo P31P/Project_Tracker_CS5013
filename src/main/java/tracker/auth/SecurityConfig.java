@@ -21,7 +21,7 @@ import org.springframework.security.web.util.matcher.AnyRequestMatcher;
 /**
  * Web security: Google sign-in limited to the allowlist, CSRF protection for the API, and sign-out.
  *
- * <p>Everything except the sign-in page and its stylesheets requires sign-in. Signed-out page requests are
+ * <p>Everything except the sign-in page, its stylesheets and fonts requires sign-in. Signed-out page requests are
  * redirected to {@code /login.html}; signed-out API requests get {@code 401}.
  */
 @Configuration
@@ -40,7 +40,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(requests -> requests
-                        .requestMatchers(LOGIN_PAGE, "/css/**").permitAll()
+                        .requestMatchers(LOGIN_PAGE, "/css/**", "/fonts/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(login -> login.loginPage(LOGIN_PAGE))
                 .logout(logout -> logout.logoutSuccessUrl(LOGIN_PAGE + "?logout"))

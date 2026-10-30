@@ -47,6 +47,12 @@ class SecurityConfigTest extends PostgresTestBase {
     void signInPageAndItsStylesAreOpenToEveryone() throws Exception {
         mvc.perform(get("/login.html")).andExpect(status().isOk());
         mvc.perform(get("/css/app.css")).andExpect(status().isOk());
+        mvc.perform(get("/fonts/geist.woff2")).andExpect(status().isOk());
+    }
+
+    @Test
+    void scriptsStillNeedSignIn() throws Exception {
+        mvc.perform(get("/js/app.js")).andExpect(status().is3xxRedirection());
     }
 
     // a refused sign-in lands here; if it redirected to Google too, the user would loop forever
