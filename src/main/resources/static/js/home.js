@@ -29,11 +29,11 @@ export async function renderHome(container, page) {
     const counts = overview.counts;
     container.replaceChildren(
         el('div', 'stats',
-            statCard('activity', 'Active projects', counts.active, '#projects', 145),
-            statCard('flag', 'In planning', counts.planning, '#projects', 265),
-            statCard('check', 'Done', counts.done, '#projects', 215),
-            statCard('bulb', 'Open ideas', counts.openIdeas, '#ideas', 40),
-            statCard('paper', 'Papers', counts.papers, '#papers', 190)),
+            statCard('Active projects', counts.active, '#projects'),
+            statCard('In planning', counts.planning, '#projects'),
+            statCard('Done', counts.done, '#projects'),
+            statCard('Open ideas', counts.openIdeas, '#ideas'),
+            statCard('Papers', counts.papers, '#papers')),
         el('div', 'home-grid',
             el('section', 'home-section',
                 sectionHead('Your projects', '#projects', 'All projects'),
@@ -50,11 +50,9 @@ function greeting() {
     return hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 }
 
-function statCard(iconName, label, value, href, hue) {
-    const card = el('a', 'stat', el('span', 'stat-icon', icon(iconName, 20)),
-        el('span', 'stat-value', String(value)), el('span', 'stat-label', label));
+function statCard(label, value, href) {
+    const card = el('a', 'stat', el('span', 'stat-label', label), el('span', 'stat-value', String(value)));
     card.href = href;
-    card.style.setProperty('--hue', hue);
     return card;
 }
 
