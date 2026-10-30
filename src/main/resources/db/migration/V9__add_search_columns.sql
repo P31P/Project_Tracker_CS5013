@@ -19,6 +19,8 @@ ALTER TABLE paper ADD COLUMN search TSVECTOR GENERATED ALWAYS AS (
     setweight(to_tsvector('english', coalesce(title, '')), 'A')
     || setweight(to_tsvector('english', coalesce(immutable_join(authors), '')), 'B')
     || setweight(to_tsvector('english', coalesce(doi, '')), 'C')
+    -- the link with / and : as spaces, so an arXiv ID or a DOI's last part is a word of its own
+    || setweight(to_tsvector('english', translate(normalized_url, '/:', '  ')), 'D')
 ) STORED;
 
 CREATE INDEX project_search_idx ON project USING GIN (search);

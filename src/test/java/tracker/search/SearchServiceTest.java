@@ -92,4 +92,16 @@ class SearchServiceTest extends PostgresTestBase {
     void oddPunctuationDoesNotBreakTheQuery() {
         assertThat(search.search("\"unclosed (", null)).isEmpty();
     }
+
+    @Test
+    void paperIsFoundByTheIdInItsLink() {
+        jdbc.sql("INSERT INTO paper (normalized_url, status, title) VALUES "
+                + "('https://arxiv.org/abs/1706.03762', 'RESOLVED', 'Attention Is All You Need')").update();
+        jdbc.sql("INSERT INTO paper (normalized_url, status) VALUES ('https://arxiv.org/abs/2610.13233', 'PENDING')").update();
+
+        assertThat(search.search("1706.03762", null)).extracting(SearchResult::title)
+                .containsExactly("Attention Is All You Need");
+        assertThat(search.search("2610.13233", null)).extracting(SearchResult::title)
+                .containsExactly("https://arxiv.org/abs/2610.13233");
+    }
 }
