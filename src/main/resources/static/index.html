@@ -16,6 +16,7 @@
         }
     </script>
     <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/search.css">
 </head>
 <body>
     <header class="app-header">
@@ -24,6 +25,9 @@
             <span class="brand-name">Raman Lab Tracker</span>
         </a>
         <nav id="tabs" class="tabs" aria-label="Sections"></nav>
+        <form id="search" class="search" role="search">
+            <input id="search-input" class="input search-input" type="search" name="q" placeholder="Search" aria-label="Search projects, ideas and papers" autocomplete="off">
+        </form>
         <div id="theme-picker" class="theme-picker"></div>
         <details class="user-menu">
             <summary id="avatar" class="avatar" aria-label="Account"></summary>

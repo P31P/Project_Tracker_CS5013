@@ -64,3 +64,19 @@
     color: hsl(0 70% 50%);
     opacity: 1;
 }
+
+.paper-facts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0.5rem 1.25rem;
+    margin: 0;
+}
+
+.paper-facts dt {
+    opacity: 0.7;
+}
+
+.paper-facts dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
