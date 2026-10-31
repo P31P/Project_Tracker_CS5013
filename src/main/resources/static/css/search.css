@@ -1,0 +1,82 @@
+.search {
+    position: relative;
+    width: 15rem;
+}
+
+.search-icon {
+    position: absolute;
+    top: 50%;
+    left: 0.7rem;
+    display: flex;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+}
+
+.search .search-input {
+    padding-left: 2.1rem;
+}
+
+/* the tab exists only so #search/... routes work; it has no button in the bar */
+.tab[hidden] {
+    display: none;
+}
+
+.search-group {
+    margin-bottom: 1.5rem;
+}
+
+.search-results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.search-result {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    color: inherit;
+    text-decoration: none;
+}
+
+.search-result:hover {
+    border-color: var(--accent);
+}
+
+.search-result-icon {
+    display: flex;
+    color: var(--accent);
+    padding-top: 0.15rem;
+}
+
+.search-result-body {
+    min-width: 0;
+}
+
+.search-result-title {
+    margin: 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.search-result-detail {
+    margin: 0.2rem 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 40rem) {
+    .search {
+        order: 4;
+        flex-basis: 100%;
+        width: auto;
+        padding-bottom: 0.6rem;
+    }
+
+    .search-icon {
+        top: calc(50% - 0.3rem);
+    }
+}
