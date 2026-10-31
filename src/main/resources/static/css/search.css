@@ -42,13 +42,16 @@
     text-decoration: none;
 }
 
-.search-result:hover {
-    border-color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+    .search-result:hover {
+        border-color: color-mix(in oklch, var(--text) 18%, var(--border));
+        box-shadow: var(--shadow);
+    }
 }
 
 .search-result-icon {
     display: flex;
-    color: var(--accent);
+    color: var(--muted);
     padding-top: 0.15rem;
 }
 

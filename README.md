@@ -4,7 +4,7 @@ Course project for CS5013 : Programming with AI
 A tracker for Raman Lab (DSAI, IIT Madras): it tracks projects and ideas, archives paper links from Slack automatically, and searches across all of them.
 
 ## Status
-Google sign-in with an allowlist; database tables for users, projects, Slack messages and papers. Slack mentions can now be ingested into the paper archive, and the papers API is available. The dashboard has four tabs: **Home** (lab numbers, your projects, popular ideas, recent activity), **Projects** (list or drag-and-drop board; start with just a title, then add members, tags, links and timeline updates), **Ideas** (quick capture with tags, upvotes, turn an idea into a project) and **Papers**. Signed-out visitors land on a sign-in page; the account menu has Sign out. A background worker fills in each new paper's title, authors and date from Crossref (DOI links), arXiv, and the citation tags on publisher pages. The search box in the header finds projects, ideas and papers (needs `GET /api/search`).
+Google sign-in with an allowlist; database tables for users, projects, Slack messages and papers. Slack mentions can now be ingested into the paper archive, and the papers API is available. The dashboard has four tabs: **Home** (lab numbers, your projects, popular ideas, recent activity), **Projects** (list or drag-and-drop board; start with just a title, then add members, tags, links and timeline updates), **Ideas** (quick capture with tags, upvotes, a discussion under each idea, turn an idea into a project) and **Papers**. Signed-out visitors land on a sign-in page; a System / Light / Dark theme switch sits beside the account menu, which has Sign out. The interface uses the Geist typeface, bundled in `static/fonts/` (SIL Open Font License). Project descriptions, timeline updates, idea descriptions and comments support Markdown (bold, italic, code, lists, headings, quotes, links). A background worker fills in each new paper's title, authors and date from Crossref (DOI links), arXiv, and the citation tags on publisher pages. The search box in the header finds projects, ideas and papers (needs `GET /api/search`).
 
 ## Run locally
 Needs Java 21, Maven and PostgreSQL with a `tracker` database (see [SCAFFOLDING.md](SCAFFOLDING.md), Step 0).
@@ -24,7 +24,7 @@ Signed-out API calls get `401`; pages redirect to the sign-in page (`/login.html
 - `GET /api/overview`: counts, the signed-in user's projects and the latest activity, for the Home tab
 - `GET /api/people`: everyone who can sign in (to add as project members)
 - `GET /api/projects`, `POST /api/projects` (`title` required; `description`, `status`, `tags`, `memberIds` optional), `GET`/`PATCH /api/projects/{id}`, `POST /api/projects/{id}/updates`, `POST /api/projects/{id}/links` (`url` must be http(s); `label` optional), `DELETE /api/projects/{id}/links/{linkId}`
-- `GET /api/ideas`, `POST /api/ideas` (`title` required; `description`, `tags` optional), `PUT`/`DELETE /api/ideas/{id}/vote`, `POST /api/ideas/{id}/promote` (starts a project in Planning with the idea's tags)
+- `GET /api/ideas`, `POST /api/ideas` (`title` required; `description`, `tags` optional), `PUT`/`DELETE /api/ideas/{id}/vote`, `GET`/`POST /api/ideas/{id}/comments` (`body` required), `POST /api/ideas/{id}/promote` (starts a project in Planning with the idea's tags)
 
 Requests that change data need the `X-XSRF-TOKEN` header (the browser gets it from the `XSRF-TOKEN` cookie; `static/js/api.js` sends it). Errors come back as `{"error": "..."}`.
 

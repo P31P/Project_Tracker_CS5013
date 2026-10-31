@@ -100,3 +100,39 @@ The pages look too simple. After the mid demo we only want to do auto-fill and h
 
 Two arXiv papers have been stuck on "Looking up details…" for a while. Read the database without printing secrets, check whether anything I changed could affect the worker, and reproduce the exact request the app makes. Tell me the cause and when they will resolve. If the fix is in Priyal's module, describe it rather than changing her code. Don't stop or restart my running app.
 
+# Sujal - prompts for documentation and understanding the code
+
+## 23. Javadoc for every Java source
+
+Add Javadoc to every public class, record, constructor and method under `src/main/java`, plus the package-private helpers other classes call, following common industry practice: a one-sentence summary, then `@param`, `@return` and `@throws` where they apply, record components as `@param`, and controllers naming their endpoint. Overrides inherit the interface's doc. Keep each doc short and accurate to what the code really does; read a method before describing it. Check with `javadoc -Xdoclint:all` and confirm the diff contains only comment lines. Do not change any code, and do not document the tests. Priyal's packages are included, so tell me which of her files were touched.
+
+## 24. Explain the architecture so I can defend every line
+
+Write me a guide to the whole codebase: the layers a request passes through, the sign-in, Slack and paper-resolution flows step by step, the database migrations, and every Java file with each method explained in plain words. Separately, explain how Google OAuth works on Google's side and in our code, the difference between SQL migrations, Flyway and JPA, what IAM users are, and why we need both Google sign-in and our own allowlist. Check claims against the code rather than guessing. Don't change any code while doing this.
+
+# Sujal - prompts for the review feedback
+
+## 25. Let people pick a light or dark theme
+
+The app only follows the computer's light or dark setting. Add a System / Light / Dark choice that is remembered in the browser and also applies to the sign-in page. The saved theme must be applied before the page is drawn so it never flashes the wrong colours, and the sign-in page cannot load scripts from `/js/` before sign-in. Keep the colours as CSS variables and note in `CLAUDE.md` anything that must be changed in two places. Check it in headless Chrome with the computer in dark mode. Don't add a library for this.
+
+## 26. A discussion under each idea
+
+Add comments to ideas so people can discuss them: a table, `GET` and `POST /api/ideas/{id}/comments`, a comment count on each idea, and a "Discuss" button that opens the thread under the card. Comments read oldest first; a blank comment gets a readable error. Take the migration number from the repo's convention and tell me if another open branch uses the same one. Test the order, the count, a blank comment, an unknown idea and a missing CSRF token. Show comment text with DOM calls, never `innerHTML`, and don't add editing or deleting comments yet.
+
+## 27. Fix the app refusing to start after switching branches
+
+`mvn spring-boot:run` fails with a Flyway validation error after I switched branches. Read the migration history in my local database without changing anything, explain the cause, and tell me why `flyway repair` would or wouldn't be right here. If local data has to be removed, first check that nothing depends on it, then do it in one transaction. Start the app on another port with Slack and the paper worker off to prove it works. Don't touch other branches or the stash, and don't stop my own app.
+
+## 28. Markdown in descriptions, updates and comments
+
+Support Markdown where people write longer text: project descriptions, timeline updates, idea descriptions and comments. Cover bold, italic, inline code, code blocks, lists, headings, quotes and links. Previews that are cut to two lines should show plain text without Markdown symbols. Pasted HTML must stay visible text and only `http(s)` addresses may become links, so test `<script>`, `<img onerror>`, `javascript:` and `data:` links, names like `file_name` and `2 * 3 * 4`. Do not use a library that produces an HTML string, and do not insert HTML with `innerHTML`.
+
+## 29. Design pass in the style of Emil Kowalski, impeccable and taste
+
+Use Emil Kowalski's approach to motion and the "impeccable" and "taste" guidance against generic AI-looking design for the whole website. If those skills aren't installed, say so and apply their principles. Replace the system font with a real typeface stored in the app, use tinted neutral colours, and remove clichés such as gradient logos, background glows, coloured side stripes, icon tiles above numbers and rainbow pills. Motion should be fast and ease out, with a small press on controls, dialogs and menus that grow in rather than pop, hover effects only on devices that hover, and nothing that replays on every redraw. Respect reduced motion. Check light, dark and phone layouts with screenshots and rerun the earlier browser checks. Don't change how anything works, and don't load fonts or scripts from another website at runtime.
+
+## 30. Move the theme switch beside the account menu
+
+Move the System / Light / Dark switch out of the account dropdown and put it in the header beside the avatar, as a compact icon-only control. Each icon still needs a tooltip and a label for screen readers. Check desktop in both themes and a phone-width header, and update every comment and document that says the switch is in the account menu. Don't change how the theme is saved or applied.
+

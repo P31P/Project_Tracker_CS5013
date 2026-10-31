@@ -18,7 +18,7 @@ Instructions for any AI coding assistant working in this repo.
 
 Context: `Proposal_Doc.pdf`, `Design_Doc.pdf`. Plans: `plans/SHARED.md`, `plans/PRIYAL.md`, `plans/SUJAL.md`. Skeleton guide: `SCAFFOLDING.md`.
 
-**Current stage:** Phase 1 done on the UI side. Home, Projects (list and board, members, tags, links), Ideas (tags, upvotes) and Papers tabs, sign-in page and sign-out are built; search (Priyal), auto-fill and deployment are next.
+**Current stage:** Phase 1 done on the UI side. Home, Projects (list and board, members, tags, links), Ideas (tags, upvotes, discussion) and Papers tabs, a light/dark theme switch, sign-in page and sign-out are built; search (Priyal), auto-fill and deployment are next.
 
 ## Team & ownership
 
@@ -60,13 +60,17 @@ Local overrides and secrets go in a git-ignored `.env` file.
 - Entities and repositories live in `tracker.data`. Add repository methods only when a feature needs them.
 - API errors: throw `ResponseStatusException` with a readable reason; `tracker.common.ApiErrors` turns it into `{"error": "..."}`. Find the signed-in user's `app_user` row with `tracker.auth.CurrentUser`.
 - CSRF is on (`csrf().spa()`): POST/PATCH/DELETE need the `X-XSRF-TOKEN` header, which `sendJson` adds. In MockMvc tests add `.with(csrf())`.
-- Every page except the sign-in page (`static/login.html`) and `/css/**` requires Google sign-in (`tracker.auth.SecurityConfig`). Only `app_user` rows with `allowlisted = true` get in; add people with a new migration.
+- Every page except the sign-in page (`static/login.html`), `/css/**` and `/fonts/**` requires Google sign-in (`tracker.auth.SecurityConfig`). Only `app_user` rows with `allowlisted = true` get in; add people with a new migration.
 - Tests that need the database extend `tracker.support.PostgresTestBase` and are `@Transactional`, so they roll back. All tests share one database; a test that commits leaks rows into the others. Tests that need a signed-in user use `oidcLogin()` from spring-security-test.
 - A scheduled worker resolves PENDING papers (`tracker.papers.PaperResolutionWorker`). It is off in tests (`PostgresTestBase`); a test that needs it turns it on with `papers.resolution-enabled=true`.
 - Paper resolvers are `PaperResolver` beans tried in `@Order`: Crossref, arXiv, then page meta tags. A new rung is a new bean with the next `@Order`.
 - Frontend modules export a `render…(container)` function and build the page with `textContent`/DOM calls, never `innerHTML`, because titles and names come from outside sources. `static/js/app.js` registers each module as a tab with `registerTab(id, label, render, description)` and calls `render(container, { actions, heading, description, path })`: a fresh, empty container, the page header's action slot and text, and anything after the tab id in the URL (`#projects/12` gives `path` "12"). Use `getJson`/`sendJson` from `static/js/api.js` and the helpers in `static/js/ui.js`; `/api/**` answers `401` when signed out and `api.js` sends the user to sign-in.
 - Search is one SQL query in `tracker.search.SearchService` over the generated `search` tsvector columns (V9) of `project`, `idea` and `paper`. A new searchable table needs its own `search` column, a GIN index and a branch in that query.
 - Tags on projects and ideas are a `text[]` column, stored trimmed, lowercased, without `#` and without duplicates (`ProjectService.tags`). The frontend colours a tag or a person from the text (`hueOf` in `ui.js`), so the same tag always has the same colour.
+- User-written text (descriptions, updates, comments) is Markdown: show it with `markdown(text)` from `static/js/markdown.js`, which builds DOM nodes and only makes `http(s)` links; use `plainText(text)` for clamped previews. Never turn Markdown into an HTML string. Add new syntax to `markdown.js` itself.
+- Design: restrained and calm. Colours are OKLCH tokens with neutrals tinted towards the accent's blue; the accent is for the main action and links, not decoration. No gradients, glows, coloured side stripes or icon tiles above numbers. Type is Geist (`static/fonts/`, loaded by `@font-face` in `app.css`); numbers that line up or change use `tabular-nums`.
+- Motion: use `--ease-out` and `--fast` (about 150–200 ms). Controls press to `scale(0.97)`; dialogs, the account menu and toasts enter from `@starting-style` (dialogs from `scale(0.96)`, never from 0). Don't animate things that happen often, such as lists redrawing after a vote or filter. Put hover styles inside `@media (hover: hover) and (pointer: fine)`. `prefers-reduced-motion` turns transitions off for the whole page.
+- Colours are CSS variables on `:root` in `app.css`. The dark values appear twice: under `prefers-color-scheme: dark` (when no theme is picked) and under `:root[data-theme="dark"]` (picked with the switch beside the account menu, `static/js/theme.js`); change both together. Each page's `<head>` applies the saved theme before drawing, so the inline script there must stay first.
 - Icons come from `static/js/icons.js` (`icon(name)`, built with `createElementNS`). Add a new icon as a path list there; don't paste SVG markup.
 - Links shown as a `href` must be `http(s)`: the server rejects anything else and the frontend checks again before setting `href`.
 - Secrets only in env vars / `.env` (git-ignored). Never hardcode tokens, keys or passwords.

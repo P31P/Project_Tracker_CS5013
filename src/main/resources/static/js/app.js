@@ -5,6 +5,7 @@ import { renderIdeas } from './ideas.js';
 import { renderPapers } from './papers.js';
 import { renderProjects } from './projects.js';
 import { initSearchBar, renderSearch } from './search.js';
+import { renderThemePicker } from './theme.js';
 import { el, hueOf, initials, toast } from './ui.js';
 
 const tabBar = document.getElementById('tabs');
@@ -58,6 +59,8 @@ async function showUser() {
     }
 }
 
+renderThemePicker(document.getElementById('theme-picker'));
+
 const signOutButton = document.getElementById('sign-out');
 signOutButton.prepend(icon('logout', 16));
 signOutButton.addEventListener('click', () => {
@@ -67,7 +70,7 @@ signOutButton.addEventListener('click', () => {
 tabBar.setAttribute('role', 'tablist');
 registerTab('home', 'Home', renderHome, 'What is happening across the lab.', 'home');
 registerTab('projects', 'Projects', renderProjects, 'What the lab is working on, and how each project is moving.', 'folder');
-registerTab('ideas', 'Ideas', renderIdeas, 'Thoughts worth keeping. Upvote the good ones, and turn one into a project when it is ready.', 'bulb');
+registerTab('ideas', 'Ideas', renderIdeas, 'Thoughts worth keeping. Discuss and upvote the good ones, and turn one into a project when it is ready.', 'bulb');
 registerTab('papers', 'Papers', renderPapers, 'Papers shared in Slack, with their details filled in automatically.', 'paper');
 
 registerTab('search', 'Search', renderSearch, 'Projects, ideas and papers that match.', 'search');

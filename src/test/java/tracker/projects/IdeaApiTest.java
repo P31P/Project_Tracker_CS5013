@@ -105,6 +105,50 @@ class IdeaApiTest extends PostgresTestBase {
                 .andExpect(jsonPath("$.tags[0]").value("graphs"));
     }
 
+    @Test
+    void discussionReadsOldestFirstAndIsCounted() throws Exception {
+        long ideaId = idOf(postIdea("{\"title\": \"Shared GPU queue\"}"));
+        comment(ideaId, "{\"body\": \"Who would run it?\"}")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.authorName").value("Sujal Jayant Kumar"));
+        comment(ideaId, "{\"body\": \"I can, if we use Slurm\"}");
+
+        mvc.perform(get("/api/ideas/" + ideaId + "/comments").with(SUJAL))
+                .andExpect(jsonPath("$[0].body").value("Who would run it?"))
+                .andExpect(jsonPath("$[1].body").value("I can, if we use Slurm"));
+        mvc.perform(get("/api/ideas").with(SUJAL))
+                .andExpect(jsonPath("$[0].commentCount").value(2));
+    }
+
+    @Test
+    void emptyCommentIsRefused() throws Exception {
+        long ideaId = idOf(postIdea("{\"title\": \"Quiet idea\"}"));
+
+        comment(ideaId, "{\"body\": \"  \"}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("A comment can't be empty"));
+    }
+
+    @Test
+    void commentOnUnknownIdeaGives404() throws Exception {
+        comment(999999, "{\"body\": \"Anyone?\"}").andExpect(status().isNotFound());
+        mvc.perform(get("/api/ideas/999999/comments").with(SUJAL)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void commentWithoutTheCsrfTokenIsRefused() throws Exception {
+        long ideaId = idOf(postIdea("{\"title\": \"Guarded idea\"}"));
+
+        mvc.perform(post("/api/ideas/" + ideaId + "/comments").with(SUJAL)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"body\": \"No token\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    private ResultActions comment(long ideaId, String json) throws Exception {
+        return mvc.perform(post("/api/ideas/" + ideaId + "/comments").with(SUJAL).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(json));
+    }
+
     private ResultActions postIdea(String json) throws Exception {
         return mvc.perform(post("/api/ideas").with(SUJAL).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(json));
