@@ -2,6 +2,7 @@
 
 import { getJson } from './api.js';
 import { icon } from './icons.js';
+import { plainText } from './markdown.js';
 import { el, emptyState, errorState, filterChips, skeleton } from './ui.js';
 
 const KINDS = [['PROJECT', 'Projects', 'folder'], ['IDEA', 'Ideas', 'bulb'], ['PAPER', 'Papers', 'paper']];
@@ -84,7 +85,7 @@ function resultItem(result, iconName) {
     const row = el('a', 'card search-result', el('span', 'search-result-icon', icon(iconName, 18)),
         el('div', 'search-result-body',
             el('p', 'search-result-title', result.title),
-            result.detail && el('p', 'search-result-detail clamp', result.detail)));
+            result.detail && el('p', 'search-result-detail clamp', plainText(result.detail))));
     row.href = addressOf(result);
     return row;
 }
