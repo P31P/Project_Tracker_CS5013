@@ -31,3 +31,11 @@ slack:
 
 papers:
   resolution-enabled: ${PAPER_RESOLUTION_ENABLED:true}
+
+# any OpenAI-style chat endpoint; the default is a local Ollama, so nothing leaves the machine
+llm:
+  enabled: ${LLM_ENABLED:false}
+  base-url: ${LLM_BASE_URL:http://localhost:11434/v1}
+  model: ${LLM_MODEL:llama3.2:3b}
+  api-key: ${LLM_API_KEY:}
+  timeout: ${LLM_TIMEOUT:60s}
