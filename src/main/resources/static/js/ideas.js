@@ -2,6 +2,7 @@
 // when it's ready.
 
 import { getJson, sendJson } from './api.js';
+import { suggestButton } from './autofill.js';
 import { icon } from './icons.js';
 import { markdown, markdownHint } from './markdown.js';
 import {
@@ -27,7 +28,13 @@ function composer(onSaved) {
         el('div', 'more-fields', description, markdownHint(), tags));
     const save = el('button', 'button', icon('bulb', 16), 'Save idea');
     save.type = 'submit';
-    const form = el('form', 'card composer composer-idea', title, more, el('div', 'composer-actions', save));
+    const suggest = suggestButton(() => title.value + '\n' + description.value, suggestion => {
+        title.value = suggestion.title;
+        description.value = suggestion.description || '';
+        tags.value = suggestion.tags.join(', ');
+        more.open = true;
+    });
+    const form = el('form', 'card composer composer-idea', title, more, el('div', 'composer-actions', suggest, save));
     form.addEventListener('submit', async event => {
         event.preventDefault();
         save.disabled = true;
