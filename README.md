@@ -4,7 +4,7 @@ Course project for CS5013 : Programming with AI
 A tracker for Raman Lab (DSAI, IIT Madras): it tracks projects and ideas, archives paper links from Slack automatically, and searches across all of them.
 
 ## Status
-Google sign-in with an allowlist; database tables for users, projects, Slack messages and papers. Slack mentions can now be ingested into the paper archive, and the papers API is available. The dashboard has four tabs: **Home** (lab numbers, your projects, popular ideas, recent activity), **Projects** (list or drag-and-drop board; start with just a title, then add members, tags, links and timeline updates), **Ideas** (quick capture with tags, upvotes, a discussion under each idea, turn an idea into a project) and **Papers**. Signed-out visitors land on a sign-in page; a System / Light / Dark theme switch sits beside the account menu, which has Sign out. The interface uses the Geist typeface, bundled in `static/fonts/` (SIL Open Font License). Project descriptions, timeline updates, idea descriptions and comments support Markdown (bold, italic, code, lists, headings, quotes, links). A background worker fills in each new paper's title, authors and date from Crossref (DOI links), arXiv, and the citation tags on publisher pages. The search box in the header finds projects, ideas and papers (needs `GET /api/search`).
+Google sign-in with an allowlist; database tables for users, projects, Slack messages and papers. Slack mentions can now be ingested into the paper archive, and the papers API is available. The dashboard has four tabs: **Home** (lab numbers, your projects, popular ideas, recent activity), **Projects** (list or drag-and-drop board; start with just a title, then add members, tags, links and timeline updates), **Ideas** (quick capture with tags, upvotes, a discussion under each idea, turn an idea into a project) and **Papers**. Signed-out visitors land on a sign-in page; a System / Light / Dark theme switch sits beside the account menu, which has Sign out. The interface uses the Geist typeface, bundled in `static/fonts/` (SIL Open Font License). Project descriptions, timeline updates, idea descriptions and comments support Markdown (bold, italic, code, lists, headings, quotes, links). A background worker fills in each new paper's title, authors and date from Crossref (DOI links), arXiv, and the citation tags on publisher pages. The search box in the header finds projects, ideas and papers (needs `GET /api/search`). With auto-fill on, a **Suggest** button in the New project dialog and the idea box turns a rough note into a title, description and tags for you to check before saving.
 
 ## Run locally
 Needs Java 21, Maven and PostgreSQL with a `tracker` database (see [SCAFFOLDING.md](SCAFFOLDING.md), Step 0).
@@ -24,12 +24,15 @@ Signed-out API calls get `401`; pages redirect to the sign-in page (`/login.html
 - `GET /api/overview`: counts, the signed-in user's projects and the latest activity, for the Home tab
 - `GET /api/people`: everyone who can sign in (to add as project members)
 - `GET /api/projects`, `POST /api/projects` (`title` required; `description`, `status`, `tags`, `memberIds` optional), `GET`/`PATCH /api/projects/{id}`, `POST /api/projects/{id}/updates`, `POST /api/projects/{id}/links` (`url` must be http(s); `label` optional), `DELETE /api/projects/{id}/links/{linkId}`
+- `GET /api/autofill`: whether auto-fill is on; `POST /api/autofill` (`note` required): a suggested `title`, `description` and `tags`, never saved
 - `GET /api/ideas`, `POST /api/ideas` (`title` required; `description`, `tags` optional), `PUT`/`DELETE /api/ideas/{id}/vote`, `GET`/`POST /api/ideas/{id}/comments` (`body` required), `POST /api/ideas/{id}/promote` (starts a project in Planning with the idea's tags)
 
 Requests that change data need the `X-XSRF-TOKEN` header (the browser gets it from the `XSRF-TOKEN` cookie; `static/js/api.js` sends it). Errors come back as `{"error": "..."}`.
 
 ## Configuration
 Settings live in `src/main/resources/application.yml`. Override them with env vars or a local `.env`: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `PORT`, `PAPER_RESOLUTION_ENABLED` (default `true`; set `false` to stop the worker calling Crossref and arXiv).
+
+Auto-fill (optional) uses a language model through an OpenAI-style API, by default a local [Ollama](https://ollama.com), so notes never leave the machine: install Ollama, run `ollama pull llama3.2:3b`, and set `LLM_ENABLED=true`. `LLM_BASE_URL` (default `http://localhost:11434/v1`), `LLM_MODEL` (default `llama3.2:3b`), `LLM_API_KEY` (blank for Ollama) and `LLM_TIMEOUT` (default `60s`) point it elsewhere. Off by default; every form works without it.
 
 Sign-in uses Google: set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from a Google Cloud OAuth client (Web application, redirect URI `http://localhost:8080/login/oauth2/code/google`).
 

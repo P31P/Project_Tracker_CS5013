@@ -1,6 +1,7 @@
 // Projects tab: the list or board (#projects) and one project with its timeline (#projects/<id>).
 
 import { getJson, sendJson } from './api.js';
+import { suggestButton } from './autofill.js';
 import { icon } from './icons.js';
 import { markdown, markdownHint, plainText } from './markdown.js';
 import {
@@ -203,15 +204,25 @@ function pickedIds(picker) {
 export async function newProjectDialog() {
     const everyone = await loadPeople().catch(() => []);
     const picker = memberPicker(everyone, []);
+    const title = input('title', { placeholder: 'What are you working on?', required: true });
+    const description = textarea('description', { placeholder: 'What is it about? Any context.' });
+    const tags = input('tags', { placeholder: 'e.g. genomics, ml' });
     const more = el('details', 'more',
         el('summary', null, 'More details (optional)'),
-        field('Description', textarea('description', { placeholder: 'What is it about? Any context.' })),
+        field('Description', description),
         markdownHint(),
         field('Status', select('status', STATUSES, 'ACTIVE')),
-        field('Tags', input('tags', { placeholder: 'e.g. genomics, ml' })),
+        field('Tags', tags),
         everyone.length > 0 && field('Teammates (you are added automatically)', picker));
+    const suggest = suggestButton(() => title.value + '\n' + description.value, suggestion => {
+        title.value = suggestion.title;
+        description.value = suggestion.description || '';
+        tags.value = suggestion.tags.join(', ');
+        more.open = true;
+    });
     formDialog('New project', [
-        field('Title', input('title', { placeholder: 'What are you working on?', required: true })),
+        field('Title', title),
+        el('div', 'autofill-row', suggest),
         more,
     ], 'Create project', async values => {
         const project = await sendJson('POST', '/api/projects',

@@ -614,6 +614,12 @@ button.tag:active {
     color: var(--muted);
 }
 
+.autofill-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+}
+
 .markdown-hint {
     margin-right: auto;
     color: var(--muted);

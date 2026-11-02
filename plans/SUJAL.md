@@ -63,14 +63,13 @@ See [SHARED.md](SHARED.md).
 - [x] Project members, tags and links (`V7`); idea tags and upvotes (`V8`); `GET /api/people`
 - [x] Home tab (`GET /api/overview`): counts, my projects, popular ideas, recent activity
 - [x] Board view of projects (drag a card to change status); line icons, avatars, coloured tags
-- [ ] **H2:** `LlmClient` (`String complete(String prompt)`) + `DisabledLlmClient`, selected by `llm.provider = hosted | local | disabled`; add the `llm:` section to `application.yml`
-- [ ] **H8:** `HostedLlmClient` over Java `HttpClient`: timeout, API key from env, one retry
-- [ ] `AutoFillService`: `prompts/autofill.txt` → Jackson → `AutoFillSuggestion`; validate the title length and tags; drop unknown fields. Bad output gives "couldn't suggest", never a 500
-- [ ] `AutoFillController`: `POST /api/autofill` returns a suggestion and **never saves**
-- [ ] `autofill.js`: "Suggest" fills the form; the user edits and then saves
-- [ ] `AutoFillServiceTest`: short fragments, missing fields, special characters/Unicode, non-JSON reply, timeout
-- [ ] With `llm.provider=disabled`, every form still works and the Suggest button is hidden
-- [ ] If a commercial LLM isn't allowed: `LocalLlmClient` (OpenAI-compatible local endpoint, e.g. Ollama)
+- [x] **H2/H8:** `LlmClient.completeJson(prompt, schema)`: one OpenAI-style client instead of separate hosted/local/disabled classes, since Ollama, Groq and Gemini accept the same API; `llm:` section in `application.yml` (`LLM_ENABLED`, base URL, model, API key, timeout). No retry: a local model answers in seconds or not at all
+- [x] `AutoFillService`: `prompts/autofill.txt` → Jackson → `AutoFillSuggestion`; validate the title length and tags; drop unknown fields. Bad output gives "couldn't suggest", never a 500
+- [x] `AutoFillController`: `POST /api/autofill` returns a suggestion and **never saves**
+- [x] `autofill.js`: "Suggest" fills the form; the user edits and then saves
+- [x] `AutoFillServiceTest`: short fragments, missing fields, special characters/Unicode, non-JSON reply, timeout
+- [x] With `LLM_ENABLED=false` (the default), every form still works and the Suggest button is hidden
+- [x] Local by default: Ollama with `llama3.2:3b` (about 6–8 s per suggestion on a laptop CPU); a hosted API is only a settings change if the lab allows it
 - [ ] **H9:** `scripts/seed-mock-data.sql` (15–20 projects + ideas)
 - [ ] Review Priyal's search migration (**H10**)
 - [ ] Page loads under 0.5 s on the seed data; add indexes where needed

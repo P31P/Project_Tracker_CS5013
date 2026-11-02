@@ -285,7 +285,7 @@ public class ProjectService {
      * @param raw the tags as typed; may be {@code null}
      * @return the tidied tags, in their first order
      */
-    static List<String> tags(List<String> raw) {
+    public static List<String> tags(List<String> raw) {
         if (raw == null) {
             return List.of();
         }
