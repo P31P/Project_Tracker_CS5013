@@ -8,9 +8,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tracker.data.Paper;
+import tracker.data.PaperReference;
+import tracker.data.PaperReferenceRepository;
 import tracker.data.PaperRepository;
 import tracker.papers.resolver.PaperResolver;
 import tracker.papers.resolver.ResolvedMetadata;
+import tracker.papers.resolver.ResolvedReference;
 
 /** Looks up the details of pending papers, one paper per transaction, and records the outcome. */
 @Service
@@ -24,16 +27,20 @@ public class PaperResolutionService {
     private static final Logger log = LoggerFactory.getLogger(PaperResolutionService.class);
 
     private final PaperRepository papers;
+    private final PaperReferenceRepository references;
     private final List<PaperResolver> resolvers;
 
     /**
      * Creates the service.
      *
      * @param papers where papers are stored
+     * @param references where papers' reference lists are stored
      * @param resolvers the resolvers, in the order to try them
      */
-    public PaperResolutionService(PaperRepository papers, List<PaperResolver> resolvers) {
+    public PaperResolutionService(PaperRepository papers, PaperReferenceRepository references,
+                                  List<PaperResolver> resolvers) {
         this.papers = papers;
+        this.references = references;
         this.resolvers = resolvers;
     }
 
@@ -59,6 +66,7 @@ public class PaperResolutionService {
             if (found.isPresent()) {
                 ResolvedMetadata meta = found.get();
                 paper.markResolved(meta.title(), meta.authors(), meta.publishedOn(), meta.doi(), meta.source());
+                replaceReferences(paper, meta.references());
             } else {
                 paper.markUnresolved();
             }
@@ -69,6 +77,14 @@ public class PaperResolutionService {
             if (paper.getAttempts() >= MAX_ATTEMPTS) {
                 paper.markUnresolved();
             }
+        }
+    }
+
+    private void replaceReferences(Paper paper, List<ResolvedReference> found) {
+        references.deleteByPaperId(paper.getId());
+        for (int i = 0; i < found.size(); i++) {
+            ResolvedReference reference = found.get(i);
+            references.save(new PaperReference(paper, i + 1, reference.citation(), reference.doi()));
         }
     }
 

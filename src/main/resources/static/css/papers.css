@@ -80,3 +80,16 @@
     margin: 0;
     overflow-wrap: anywhere;
 }
+
+.paper-references {
+    margin-top: 1.5rem;
+}
+
+.reference-list {
+    margin: 0;
+    padding-left: 1.75rem;
+    display: grid;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+}

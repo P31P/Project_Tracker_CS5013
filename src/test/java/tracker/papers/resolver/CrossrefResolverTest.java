@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,6 +56,44 @@ class CrossrefResolverTest {
         assertThat(paper.publishedOn()).isEqualTo(LocalDate.of(2015, 4, 11));
         assertThat(paper.doi()).isEqualTo("10.1007/s11263-015-0816-y");
         assertThat(paper.source()).isEqualTo(PaperSource.REGISTRY);
+    }
+
+    @Test
+    void referenceListComesInOrderWithDois() {
+        crossref.stubFor(get(urlEqualTo(SPRINGER_PATH)).willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBody(Fixtures.read("crossref/springer-imagenet.json"))));
+
+        List<ResolvedReference> references = resolver.resolve(SPRINGER_URL).orElseThrow().references();
+
+        assertThat(references).hasSize(102);
+        assertThat(references.get(0).citation()).startsWith("Ahonen, T., Hadid, A., & Pietikinen, M. (2006).");
+        assertThat(references.get(0).doi()).isEqualTo("10.1109/tpami.2006.244");
+        assertThat(references).filteredOn(reference -> reference.doi() == null).isNotEmpty();
+    }
+
+    @Test
+    void referenceWithoutACitationIsPutTogetherFromItsParts() {
+        crossref.stubFor(get(urlEqualTo(SPRINGER_PATH)).willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBody("""
+                        {"status":"ok","message":{"DOI":"10.1007/s11263-015-0816-y","title":["A paper"],
+                          "reference":[
+                            {"key":"r1","author":"Doe","year":"2020","article-title":"Flux sampling","DOI":"10.1/X"},
+                            {"key":"r2"}]}}""")));
+
+        List<ResolvedReference> references = resolver.resolve(SPRINGER_URL).orElseThrow().references();
+
+        assertThat(references).containsExactly(new ResolvedReference("Doe, 2020, Flux sampling", "10.1/x"));
+    }
+
+    @Test
+    void workWithoutAReferenceListHasNone() {
+        crossref.stubFor(get(urlEqualTo(SPRINGER_PATH)).willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\"status\":\"ok\",\"message\":{\"DOI\":\"10.1/x\",\"title\":[\"A paper\"]}}")));
+
+        assertThat(resolver.resolve(SPRINGER_URL).orElseThrow().references()).isEmpty();
     }
 
     @Test

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -21,6 +22,8 @@ import tracker.data.PaperSource;
 public class CrossrefResolver implements PaperResolver {
 
     private static final String DOI_PREFIX = "https://doi.org/";
+    // review articles can cite hundreds of works; more than this is not useful on one page
+    private static final int MAX_REFERENCES = 500;
 
     private final RestClient http;
     private final JsonMapper json = JsonMapper.builder().build();
@@ -59,7 +62,30 @@ public class CrossrefResolver implements PaperResolver {
                 authors(work.path("author")),
                 publishedOn(work.path("issued").path("date-parts")),
                 work.path("DOI").asString(null),
-                PaperSource.REGISTRY));
+                PaperSource.REGISTRY,
+                references(work.path("reference"))));
+    }
+
+    /**
+     * Crossref's reference list, when the publisher deposited one. Each entry usually has an "unstructured" citation;
+     * when it doesn't, one is put together from the author, year and titles.
+     */
+    private static List<ResolvedReference> references(JsonNode entries) {
+        List<ResolvedReference> references = new ArrayList<>();
+        for (JsonNode entry : entries) {
+            String citation = entry.path("unstructured").asString("").strip();
+            if (citation.isEmpty()) {
+                citation = String.join(", ", Stream.of("author", "year", "article-title", "journal-title", "volume-title")
+                        .map(field -> entry.path(field).asString("").strip())
+                        .filter(part -> !part.isEmpty())
+                        .toList());
+            }
+            String doi = entry.path("DOI").asString("").strip().toLowerCase();
+            if (!citation.isEmpty() && references.size() < MAX_REFERENCES) {
+                references.add(new ResolvedReference(plainText(citation), doi.isEmpty() ? null : doi));
+            }
+        }
+        return references;
     }
 
     /** Crossref titles can carry HTML such as {@code <i>} and line breaks; keep only the text. */

@@ -48,9 +48,10 @@ What both of you depend on. Individual tasks are in [PRIYAL.md](PRIYAL.md) and [
 | `idea_vote` | idea_id, user_id (primary key on both, so one vote per person), created_at | V8 |
 | `project`, `idea`, `paper` (added) | `search` generated `tsvector` with a GIN index (title weighted highest, then description or authors, then tags or DOI); `immutable_join()` function | V9 |
 | `idea_comment` | idea_id, author_id, body (not blank), created_at | V10 |
+| `paper_reference` | paper_id, position (unique per paper), citation (not blank), doi | V11 |
 
 ### Planned (added by the feature that needs it)
 
 | Table / columns | With |
 |---|---|
-| `paper_reference` | paper resolver |
+| (nothing planned right now) | |
