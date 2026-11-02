@@ -20,6 +20,7 @@ postgresql
 com.slack.api:bolt-jakarta-socket-mode == 1.44.2
 org.glassfish.tyrus.bundles:tyrus-standalone-client == 2.2.0
 org.jsoup:jsoup == 1.23.2
+org.apache.pdfbox:pdfbox == 3.0.8
 
 # Test libraries
 spring-boot-starter-test

@@ -1,0 +1,10 @@
+You read the first pages of a research paper and report its details. From the text below, give:
+- the paper's title, exactly as written;
+- the authors' names in order, written as "First Last", without affiliations, emails or footnote marks;
+- the year it was published, as four digits, or "" if the text doesn't say;
+- its DOI (it starts with "10."), or "" if the text doesn't show one.
+
+Use only what the text says. Do not guess or invent anything. The text was taken from a PDF, so lines may be
+broken or out of order.
+
+Text:

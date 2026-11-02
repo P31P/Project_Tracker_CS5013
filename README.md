@@ -32,7 +32,7 @@ Requests that change data need the `X-XSRF-TOKEN` header (the browser gets it fr
 ## Configuration
 Settings live in `src/main/resources/application.yml`. Override them with env vars or a local `.env`: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `PORT`, `PAPER_RESOLUTION_ENABLED` (default `true`; set `false` to stop the worker calling Crossref and arXiv).
 
-Auto-fill (optional) uses a language model through an OpenAI-style API, by default a local [Ollama](https://ollama.com), so notes never leave the machine: install Ollama, run `ollama pull llama3.2:3b`, and set `LLM_ENABLED=true`. `LLM_BASE_URL` (default `http://localhost:11434/v1`), `LLM_MODEL` (default `llama3.2:3b`), `LLM_API_KEY` (blank for Ollama) and `LLM_TIMEOUT` (default `60s`) point it elsewhere. Off by default; every form works without it.
+Auto-fill (optional) uses a language model through an OpenAI-style API, by default a local [Ollama](https://ollama.com), so notes never leave the machine: install Ollama, run `ollama pull llama3.2:3b`, and set `LLM_ENABLED=true`. `LLM_BASE_URL` (default `http://localhost:11434/v1`), `LLM_MODEL` (default `llama3.2:3b`), `LLM_API_KEY` (blank for Ollama) and `LLM_TIMEOUT` (default `60s`) point it elsewhere. Off by default; every form works without it. When it is on, the paper worker also uses it as a last resort for bare PDF links: it reads the first two pages and fills in the title, authors and year, marked "Guessed by AI, please check" until someone fixes them by hand.
 
 Sign-in uses Google: set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from a Google Cloud OAuth client (Web application, redirect URI `http://localhost:8080/login/oauth2/code/google`).
 
