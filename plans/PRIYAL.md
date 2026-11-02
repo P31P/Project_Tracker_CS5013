@@ -39,7 +39,7 @@ See [SHARED.md](SHARED.md).
 - [x] Slack app "Pai project slack helper" in Socket Mode; `#scanner_testing` channel with the bot invited
 - [x] Trigger decided: only when @mentioned (`app_mentions:read`, `app_mention` event); the mention message may contain other text
 - [x] Share tokens with Sujal outside git → **H5**
-- [ ] Review the paper/slack tables in the V1 draft → **H3**
+- [x] Review the paper/slack tables in the V1 draft → **H3**
 - [x] `LinkExtractor` + `LinkExtractorTest`:
   - Slack `<url|label>` and `<url>` forms
   - `arxiv.org/abs/…` and `/pdf/…`, with and without a version suffix
@@ -74,8 +74,8 @@ See [SHARED.md](SHARED.md).
 - [x] Search migration: generated `tsvector` columns + GIN indexes on `project`, `idea`, `paper` → **H10**
 - [x] `SearchService`: `websearch_to_tsquery`, `ts_rank`, `UNION ALL` across the three tables, `type` filter, top 50
 - [x] `SearchController`: `GET /api/search?q=&type=`
-- [ ] `search.js`: search bar in the header, results grouped by type, filter chips
-- [ ] Paper detail page + "Fix details" form → `PATCH /api/papers/{id}`, which sets `source = MANUAL`
+- [x] `search.js`: search bar in the header, results grouped by type, filter chips
+- [x] Paper detail page + "Fix details" form → `PATCH /api/papers/{id}`, which sets `source = MANUAL`
 - [x] `SearchServiceTest` on the seed data: one keyword across a project title, an idea and a paper returns all three
 
 ### Phase 3: Deploy (your half of G)
