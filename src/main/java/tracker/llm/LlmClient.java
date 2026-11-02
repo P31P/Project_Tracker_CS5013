@@ -87,6 +87,10 @@ public class LlmClient {
                     .body(json.writeValueAsString(request))
                     .retrieve()
                     .body(String.class);
+            // an empty body is null here, which readTree would reject with an unchecked error instead of LlmException
+            if (reply == null || reply.isBlank()) {
+                throw new LlmException("The language model sent no answer");
+            }
             JsonNode content = json.readTree(reply).path("choices").path(0).path("message").path("content");
             if (!content.isString()) {
                 throw new LlmException("The language model sent no answer");

@@ -97,6 +97,15 @@ class LlmClientTest {
     }
 
     @Test
+    void emptyReplyIsReportedAsLlmException() {
+        model.stubFor(post(urlEqualTo("/v1/chat/completions")).willReturn(aResponse().withStatus(200)));
+
+        assertThatThrownBy(() -> client(true, "", Duration.ofSeconds(5)).completeJson("Hi", SCHEMA))
+                .isInstanceOf(LlmException.class)
+                .hasMessage("The language model sent no answer");
+    }
+
+    @Test
     void turnedOffClientNeverCallsTheModel() {
         assertThatThrownBy(() -> client(false, "", Duration.ofSeconds(5)).completeJson("Hi", SCHEMA))
                 .isInstanceOf(LlmException.class)
