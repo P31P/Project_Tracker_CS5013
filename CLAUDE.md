@@ -18,7 +18,7 @@ Instructions for any AI coding assistant working in this repo.
 
 Context: `Proposal_Doc.pdf`, `Design_Doc.pdf`. Plans: `plans/SHARED.md`, `plans/PRIYAL.md`, `plans/SUJAL.md`. Skeleton guide: `SCAFFOLDING.md`.
 
-**Current stage:** Phase 1 done on the UI side. Home, Projects (list and board, members, tags, links), Ideas (tags, upvotes, discussion) and Papers tabs, a light/dark theme switch, sign-in page and sign-out are built; search (Priyal), auto-fill and deployment are next.
+**Current stage:** Phase 2 mostly done. Home, Projects (list and board, members, tags, links), Ideas (tags, upvotes, discussion), Papers (detail page, Fix details) and search are built, with a light/dark theme switch, sign-in and sign-out, and auto-fill (off by default). The PDF step of the paper resolver, paper references, seed data and deployment are next.
 
 ## Team & ownership
 

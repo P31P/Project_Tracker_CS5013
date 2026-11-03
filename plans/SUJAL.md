@@ -39,7 +39,7 @@ See [SHARED.md](SHARED.md).
 
 - [x] **H1:** skeleton from `SCAFFOLDING.md` (scaffold dependencies only), `application.yml`, `ci.yml`
 - [x] Local Postgres: `tracker` database and user; `application-local.yml`
-- [ ] Slack tables reviewed by Priyal (**H3**, in PR #6)
+- [x] Slack tables reviewed by Priyal (**H3**, in PR #6)
 - [x] **H4:** migrations `V1__init.sql` (users, projects) and `V2__create_slack_tables.sql` (Slack messages, papers, shares), entities, repositories; `ConstraintsTest`, `SlackTablesTest`
 - [x] **H6:** Google sign-in with an allowlist
   - Google Cloud OAuth client, redirect `http://localhost:8080/login/oauth2/code/google`
@@ -71,7 +71,7 @@ See [SHARED.md](SHARED.md).
 - [x] With `LLM_ENABLED=false` (the default), every form still works and the Suggest button is hidden
 - [x] Local by default: Ollama with `llama3.2:3b` (about 6–8 s per suggestion on a laptop CPU); a hosted API is only a settings change if the lab allows it
 - [ ] **H9:** `scripts/seed-mock-data.sql` (15–20 projects + ideas)
-- [ ] Review Priyal's search migration (**H10**)
+- [x] Review Priyal's search migration (**H10**)
 - [ ] Page loads under 0.5 s on the seed data; add indexes where needed
 
 ### Phase 3: Deploy (your half of G)
