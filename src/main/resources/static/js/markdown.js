@@ -58,7 +58,10 @@ export function plainText(text) {
         .replace(/^\s*```.*$/gm, '')
         .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$1')
         .replace(/^\s*(#{1,3}\s+|>\s?|[-*+]\s+|\d+[.)]\s+)/gm, '')
-        .replace(/\*\*|\*|`/g, '')
+        // only paired markers, the same ones markdown() styles, so "2*3" keeps its star
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/\*([^*\s][^*]*)\*/g, '$1')
         .replace(/\s+/g, ' ')
         .trim();
 }

@@ -83,6 +83,8 @@ async function load(list) {
     };
     // ids of ideas whose discussion is open, so it stays open when the list is redrawn
     const openDiscussions = new Set();
+    // half-typed comments by idea id; every redraw rebuilds the comment boxes, so the text is kept here
+    const drafts = new Map();
     const toggleDiscussion = id => {
         if (openDiscussions.has(id)) {
             openDiscussions.delete(id);
@@ -108,14 +110,14 @@ async function load(list) {
             tag && el('div', 'active-filter', 'Showing ideas tagged ', tagPill(tag),
                 button(['close', 'Clear'], 'link-button', () => pickTag(null))),
             shown.length > 0
-                ? el('div', 'card-list', ...shown.map((idea, index) => ideaCard(idea, replace, pickTag, index, openDiscussions.has(idea.id), toggleDiscussion)))
+                ? el('div', 'card-list', ...shown.map((idea, index) => ideaCard(idea, replace, pickTag, index, openDiscussions.has(idea.id), toggleDiscussion, drafts)))
                 : el('p', 'muted', 'Nothing here yet.'),
         ].filter(Boolean));
     };
     draw();
 }
 
-function ideaCard(idea, replace, pickTag, index, discussionOpen, toggleDiscussion) {
+function ideaCard(idea, replace, pickTag, index, discussionOpen, toggleDiscussion, drafts) {
     const card = el('article', 'card idea',
         voteButton(idea, replace),
         el('div', 'idea-body',
@@ -126,7 +128,7 @@ function ideaCard(idea, replace, pickTag, index, discussionOpen, toggleDiscussio
                 [idea.authorName, relativeTime(idea.createdAt)].filter(Boolean).join(' · '),
                 discussionToggle(idea, discussionOpen, toggleDiscussion))),
         el('div', 'idea-action', idea.projectId !== null ? projectLink(idea) : promoteButton(idea)),
-        discussionOpen && discussion(idea, replace));
+        discussionOpen && discussion(idea, replace, drafts));
     card.style.setProperty('--i', Math.min(index, 10));
     return card;
 }
@@ -140,7 +142,7 @@ function discussionToggle(idea, open, toggleDiscussion) {
 }
 
 // the thread loads when the discussion is opened; posting redraws the card, which loads it again
-function discussion(idea, replace) {
+function discussion(idea, replace, drafts) {
     const thread = el('ol', 'comments', el('li', 'muted comments-note', 'Loading the discussion…'));
     getJson('/api/ideas/' + idea.id + '/comments')
         .then(comments => thread.replaceChildren(...(comments.length > 0
@@ -151,6 +153,8 @@ function discussion(idea, replace) {
 
     const body = textarea('body', { placeholder: 'Add to the discussion…', rows: 2 });
     body.setAttribute('aria-label', 'Comment');
+    body.value = drafts.get(idea.id) || '';
+    body.addEventListener('input', () => drafts.set(idea.id, body.value));
     const post = el('button', 'button button-small', icon('message', 16), 'Comment');
     post.type = 'submit';
     const form = el('form', 'comment-form', body, el('div', 'composer-actions', markdownHint(), post));
@@ -160,6 +164,7 @@ function discussion(idea, replace) {
         try {
             await sendJson('POST', '/api/ideas/' + idea.id + '/comments', { body: body.value });
             toast('Comment posted');
+            drafts.delete(idea.id);
             replace({ ...idea, commentCount: idea.commentCount + 1 });
         } catch (problem) {
             toast(problem.message, 'error');
