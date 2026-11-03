@@ -70,9 +70,9 @@ See [SHARED.md](SHARED.md).
 - [x] `AutoFillServiceTest`: short fragments, missing fields, special characters/Unicode, non-JSON reply, timeout
 - [x] With `LLM_ENABLED=false` (the default), every form still works and the Suggest button is hidden
 - [x] Local by default: Ollama with `llama3.2:3b` (about 6–8 s per suggestion on a laptop CPU); a hosted API is only a settings change if the lab allows it
-- [ ] **H9:** `scripts/seed-mock-data.sql` (15–20 projects + ideas)
+- [x] **H9:** `scripts/seed-mock-data.sql` (15–20 projects + ideas)
 - [x] Review Priyal's search migration (**H10**)
-- [ ] Page loads under 0.5 s on the seed data; add indexes where needed
+- [x] Page loads under 0.5 s on the seed data; add indexes where needed
 
 ### Phase 3: Deploy (your half of G)
 
