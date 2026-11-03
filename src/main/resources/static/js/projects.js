@@ -1,7 +1,7 @@
 // Projects tab: the list or board (#projects) and one project with its timeline (#projects/<id>).
 
 import { getJson, sendJson } from './api.js';
-import { suggestButton } from './autofill.js';
+import { mergeSuggestedTags, suggestButton } from './autofill.js';
 import { icon } from './icons.js';
 import { markdown, markdownHint, plainText } from './markdown.js';
 import {
@@ -217,7 +217,7 @@ export async function newProjectDialog() {
     const suggest = suggestButton(() => title.value + '\n' + description.value, suggestion => {
         title.value = suggestion.title;
         description.value = suggestion.description || '';
-        tags.value = suggestion.tags.join(', ');
+        tags.value = mergeSuggestedTags(tags, suggestion.tags);
         more.open = true;
     });
     formDialog('New project', [

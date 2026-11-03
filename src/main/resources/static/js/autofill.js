@@ -2,7 +2,7 @@
 // It only fills the form; nothing is saved until the person checks it and saves.
 
 import { getJson, sendJson } from './api.js';
-import { button, toast } from './ui.js';
+import { button, splitTags, toast } from './ui.js';
 
 let enabled;
 
@@ -44,4 +44,20 @@ export function suggestButton(readNote, fill) {
         suggest.hidden = !on;
     });
     return suggest;
+}
+
+/**
+ * The tags field's value after a suggestion: the tags the person typed, then the suggested ones not already there.
+ * Tags left from an earlier suggestion are replaced, so pressing Suggest twice doesn't pile them up.
+ */
+export function mergeSuggestedTags(field, suggested) {
+    // the field's dataset remembers the last value Suggest put there and what the person had typed before it
+    if (field.value !== (field.dataset.suggested || '')) {
+        field.dataset.typed = field.value;
+    }
+    const typed = splitTags(field.dataset.typed);
+    const seen = new Set(typed.map(tag => tag.replace(/^#/, '').toLowerCase()));
+    const value = [...typed, ...suggested.filter(tag => !seen.has(tag))].join(', ');
+    field.dataset.suggested = value;
+    return value;
 }

@@ -2,7 +2,7 @@
 // when it's ready.
 
 import { getJson, sendJson } from './api.js';
-import { suggestButton } from './autofill.js';
+import { mergeSuggestedTags, suggestButton } from './autofill.js';
 import { icon } from './icons.js';
 import { markdown, markdownHint } from './markdown.js';
 import {
@@ -31,7 +31,7 @@ function composer(onSaved) {
     const suggest = suggestButton(() => title.value + '\n' + description.value, suggestion => {
         title.value = suggestion.title;
         description.value = suggestion.description || '';
-        tags.value = suggestion.tags.join(', ');
+        tags.value = mergeSuggestedTags(tags, suggestion.tags);
         more.open = true;
     });
     const form = el('form', 'card composer composer-idea', title, more, el('div', 'composer-actions', suggest, save));
