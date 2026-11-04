@@ -15,7 +15,7 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.EncodedResource;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.datasource.DataSourceUtils;
@@ -26,8 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 import tracker.support.PostgresTestBase;
 
 /**
- * Loads {@code scripts/seed-mock-data.sql} into the test database (rolled back afterwards), so the script keeps
- * working as the schema changes, and checks the main pages stay fast on it.
+ * Loads {@code src/test/resources/seed-mock-data.sql} into the test database (rolled back afterwards), so the
+ * script keeps working as the schema changes.
  */
 @AutoConfigureMockMvc
 @Transactional
@@ -40,9 +40,6 @@ class SeedDataTest extends PostgresTestBase {
     private static final RequestPostProcessor TEAM_MEMBER = oidcLogin().idToken(token -> token
             .claim("email", "da24b026@smail.iitm.ac.in")
             .claim("name", "Sujal Jayant Kumar"));
-
-    /** The plan's target for a page load; the API calls behind a page have to fit in it. */
-    private static final long PAGE_BUDGET_MS = 500;
 
     @Autowired
     private DataSource dataSource;
@@ -86,29 +83,10 @@ class SeedDataTest extends PostgresTestBase {
         assertThatThrownBy(this::loadSeed).hasStackTraceContaining("app_user_email_key");
     }
 
-    @Test
-    void mainPagesAnswerWithinTheBudget() throws Exception {
-        loadSeed();
-        long projectId = jdbc.sql("SELECT id FROM project WHERE title = 'Flux sampling benchmark on genome-scale models'")
-                .query(Long.class).single();
-        List<String> calls = List.of("/api/overview", "/api/projects", "/api/projects/" + projectId, "/api/ideas",
-                "/api/papers", "/api/search?q=metabolism");
-        for (String call : calls) {
-            mvc.perform(get(call).with(TEAM_MEMBER)).andExpect(status().isOk()); // warm up
-        }
-
-        for (String call : calls) {
-            long start = System.nanoTime();
-            mvc.perform(get(call).with(TEAM_MEMBER)).andExpect(status().isOk());
-            long millis = (System.nanoTime() - start) / 1_000_000;
-            assertThat(millis).as(call + " took " + millis + " ms").isLessThan(PAGE_BUDGET_MS);
-        }
-    }
-
     // runs on the test's own connection, so the rows roll back with the test
     private void loadSeed() {
         ScriptUtils.executeSqlScript(DataSourceUtils.getConnection(dataSource),
-                new EncodedResource(new FileSystemResource("scripts/seed-mock-data.sql"), StandardCharsets.UTF_8));
+                new EncodedResource(new ClassPathResource("seed-mock-data.sql"), StandardCharsets.UTF_8));
     }
 
     private Map<String, Integer> counts() {

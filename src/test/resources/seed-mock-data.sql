@@ -1,6 +1,6 @@
 -- Mock projects and ideas for demos and local testing. Never run this on the lab's real database.
 -- Load it in one transaction, so a failure leaves nothing behind:
---   psql -U tracker -d tracker -1 -v ON_ERROR_STOP=1 -f scripts/seed-mock-data.sql
+--   psql -U tracker -d tracker -1 -v ON_ERROR_STOP=1 -f src/test/resources/seed-mock-data.sql
 -- Running it a second time fails on the first insert (the emails are unique) and changes nothing.
 
 -- Mock lab members. They are not allowlisted, so they can't sign in; they only fill in names and avatars.
