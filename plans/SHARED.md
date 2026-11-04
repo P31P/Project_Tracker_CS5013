@@ -23,7 +23,7 @@ What both of you depend on. Individual tasks are in [PRIYAL.md](PRIYAL.md) and [
 | H6 | Sujal → Priyal | `SecurityConfig` + test helper for signed-in MockMvc | `PaperController`, `SearchController` |
 | H7 | Sujal → Priyal | Dashboard shell: `index.html`, `api.js`, `app.js` with `registerTab(id, label, render)` | `papers.js`, `search.js` |
 | H8 | Sujal → Priyal | `HostedLlmClient` | running rung 3 for real |
-| H9 | Sujal → Priyal | `scripts/seed-mock-data.sql` | `SearchServiceTest` |
+| H9 | Sujal → Priyal | `src/test/resources/seed-mock-data.sql` | `SearchServiceTest` |
 | H10 | Priyal → Sujal | Search migration (touches `project` and `idea`) | search |
 
 ## Schema

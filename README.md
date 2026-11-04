@@ -12,7 +12,7 @@ Needs Java 21, Maven and PostgreSQL with a `tracker` database (see [SCAFFOLDING.
 mvn verify
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
-Then open http://localhost:8080.
+Then open http://localhost:8080. For demo data on a local database (16 projects, 12 ideas, with members, updates, votes and comments), run `psql -U tracker -d tracker -1 -v ON_ERROR_STOP=1 -f src/test/resources/seed-mock-data.sql` once.
 
 ## API
 Signed-out API calls get `401`; pages redirect to the sign-in page (`/login.html`).
