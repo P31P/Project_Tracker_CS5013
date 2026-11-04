@@ -9,5 +9,7 @@ public enum PaperSource {
     /** The citation meta tags on the paper's own web page. */
     META_TAGS,
     /** A person corrected the details by hand. */
-    MANUAL
+    MANUAL,
+    /** The language model read them from the PDF, so a person should check them. */
+    MODEL
 }
