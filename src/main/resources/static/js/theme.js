@@ -38,7 +38,10 @@ export function renderThemePicker(container) {
     const group = el('div', 'segmented theme-switch', ...CHOICES.map(([theme, label, iconName]) => {
         const option = button(icon(iconName, 15), 'segment', () => {
             applyTheme(theme);
-            renderThemePicker(container);
+            // update the buttons in place rather than redrawing them, so keyboard focus stays on this one
+            for (const other of group.children) {
+                other.setAttribute('aria-pressed', String(other === option));
+            }
         });
         option.setAttribute('aria-pressed', String(theme === current));
         option.setAttribute('aria-label', label + ' theme');
