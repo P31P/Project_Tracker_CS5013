@@ -1,6 +1,7 @@
 package tracker.papers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -14,11 +15,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import tracker.data.Paper;
+import tracker.data.PaperReference;
+import tracker.data.PaperReferenceRepository;
 import tracker.data.PaperRepository;
 import tracker.data.PaperSource;
 import tracker.data.PaperStatus;
 import tracker.papers.resolver.PaperResolver;
 import tracker.papers.resolver.ResolvedMetadata;
+import tracker.papers.resolver.ResolvedReference;
 import tracker.support.PostgresTestBase;
 
 @Transactional
@@ -30,6 +34,9 @@ class PaperResolutionServiceTest extends PostgresTestBase {
     private PaperRepository papers;
 
     @Autowired
+    private PaperReferenceRepository references;
+
+    @Autowired
     private EntityManager entityManager;
 
     private PaperResolver resolver;
@@ -39,7 +46,7 @@ class PaperResolutionServiceTest extends PostgresTestBase {
     void setUp() {
         resolver = mock(PaperResolver.class);
         when(resolver.supports(any())).thenReturn(true);
-        service = new PaperResolutionService(papers, List.of(resolver));
+        service = new PaperResolutionService(papers, references, List.of(resolver));
     }
 
     @Test
@@ -57,6 +64,39 @@ class PaperResolutionServiceTest extends PostgresTestBase {
         assertThat(saved.getTitle()).isEqualTo("Attention Is All You Need");
         assertThat(saved.getAuthors()).containsExactly("Ashish Vaswani", "Noam Shazeer");
         assertThat(saved.getPublishedOn()).isEqualTo(LocalDate.of(2017, 6, 12));
+    }
+
+    @Test
+    void referencesAreStoredInOrder() {
+        Paper paper = papers.saveAndFlush(new Paper(URL));
+        when(resolver.resolve(URL)).thenReturn(Optional.of(new ResolvedMetadata("Title", List.of(), null, null,
+                PaperSource.REGISTRY, List.of(new ResolvedReference("First cited work", "10.1/a"),
+                        new ResolvedReference("Second cited work", null)))));
+
+        service.resolveNext();
+
+        assertThat(references.findByPaperIdOrderByPosition(paper.getId()))
+                .extracting(PaperReference::getPosition, PaperReference::getCitation, PaperReference::getDoi)
+                .containsExactly(tuple(1, "First cited work", "10.1/a"), tuple(2, "Second cited work", null));
+    }
+
+    @Test
+    void aNewLookupReplacesTheOldReferences() {
+        Paper paper = papers.saveAndFlush(new Paper(URL));
+        when(resolver.resolve(URL))
+                .thenReturn(Optional.of(new ResolvedMetadata("Title", List.of(), null, null, PaperSource.REGISTRY,
+                        List.of(new ResolvedReference("Old", null), new ResolvedReference("Older", null)))))
+                .thenReturn(Optional.of(new ResolvedMetadata("Title", List.of(), null, null, PaperSource.REGISTRY,
+                        List.of(new ResolvedReference("New", null)))));
+        service.resolveNext();
+        papers.flush();
+        entityManager.createNativeQuery("UPDATE paper SET status = 'PENDING'").executeUpdate();
+        entityManager.clear();
+
+        service.resolveNext();
+
+        assertThat(references.findByPaperIdOrderByPosition(paper.getId()))
+                .extracting(PaperReference::getCitation).containsExactly("New");
     }
 
     @Test

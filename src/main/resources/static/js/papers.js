@@ -119,6 +119,8 @@ async function renderPaper(container, page, id) {
         container.replaceChildren(errorState(problem.message));
         return;
     }
+    // loaded once; fixing the details redraws the page but doesn't change the references
+    const references = referencesSection(paper.id);
     const draw = () => {
         page.heading.textContent = paper.title || paper.normalizedUrl;
         document.title = (paper.title || 'Paper') + ' · Raman Lab Tracker';
@@ -128,9 +130,28 @@ async function renderPaper(container, page, id) {
                 paper = updated;
                 draw();
             })));
-        container.replaceChildren(el('div', 'card', el('dl', 'paper-facts', ...facts(paper))));
+        container.replaceChildren(el('div', 'card', el('dl', 'paper-facts', ...facts(paper))), references);
     };
     draw();
+}
+
+function referencesSection(paperId) {
+    const body = el('p', 'muted', 'Loading references…');
+    const section = el('section', 'paper-references', el('h2', 'section-title', 'References'), body);
+    getJson('/api/papers/' + paperId + '/references')
+        .then(references => body.replaceWith(references.length > 0
+            ? el('ol', 'reference-list', ...references.map(referenceItem))
+            : el('p', 'muted', 'References not available. They come from Crossref, so only papers it knows have them.')))
+        .catch(problem => body.replaceWith(errorState('Could not load the references. ' + problem.message)));
+    return section;
+}
+
+function referenceItem(reference) {
+    const item = el('li', null, reference.citation);
+    if (reference.doi) {
+        item.append(' ', link('https://doi.org/' + reference.doi, 'DOI'));
+    }
+    return item;
 }
 
 function backLink() {

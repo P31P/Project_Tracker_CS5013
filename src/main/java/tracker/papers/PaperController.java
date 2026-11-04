@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import tracker.data.Paper;
+import tracker.data.PaperReferenceRepository;
 import tracker.data.PaperRepository;
 import tracker.data.PaperShare;
 import tracker.data.PaperShareRepository;
@@ -26,16 +27,19 @@ public class PaperController {
 
     private final PaperRepository papers;
     private final PaperShareRepository shares;
+    private final PaperReferenceRepository references;
 
     /**
      * Creates the controller.
      *
      * @param papers where papers are stored
      * @param shares where Slack shares are stored
+     * @param references where papers' reference lists are stored
      */
-    public PaperController(PaperRepository papers, PaperShareRepository shares) {
+    public PaperController(PaperRepository papers, PaperShareRepository shares, PaperReferenceRepository references) {
         this.papers = papers;
         this.shares = shares;
+        this.references = references;
     }
 
     /**
@@ -61,6 +65,22 @@ public class PaperController {
         Paper paper = papers.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         return toDtos(List.of(paper)).get(0);
+    }
+
+    /**
+     * Lists a paper's references in their original order. Handles {@code GET /api/papers/{id}/references}. Only
+     * papers found in Crossref have them; for others the list is empty.
+     *
+     * @param id the paper's id
+     * @return the references
+     * @throws ResponseStatusException {@code 404} if there is no paper with this id
+     */
+    @GetMapping("/{id}/references")
+    public List<PaperReferenceDto> references(@PathVariable Long id) {
+        if (!papers.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No such paper");
+        }
+        return references.findByPaperIdOrderByPosition(id).stream().map(PaperReferenceDto::from).toList();
     }
 
     /**
