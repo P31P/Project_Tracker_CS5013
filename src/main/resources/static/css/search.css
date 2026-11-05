@@ -35,6 +35,21 @@
     align-items: end;
 }
 
+.search-tags {
+    grid-column: 1 / -1;
+    margin-top: 1rem;
+}
+
+.search-tags summary {
+    color: var(--accent);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.search-tags .tag-picker {
+    margin-top: 0.5rem;
+}
+
 .search-clear {
     justify-self: start;
     margin-top: 1rem;
