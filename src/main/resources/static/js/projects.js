@@ -2,6 +2,7 @@
 
 import { getJson, sendJson } from './api.js';
 import { suggestButton } from './autofill.js';
+import { collabBadge, collabSelect, detailFields, detailSections, detailsFrom, hasDetails } from './details.js';
 import { icon } from './icons.js';
 import { markdown, markdownHint, plainText } from './markdown.js';
 import { tagPicker } from './tags.js';
@@ -10,7 +11,7 @@ import {
     segmented, select, skeleton, splitTags, tagList, tagPill, textarea, toast,
 } from './ui.js';
 
-const STATUSES = [['PLANNING', 'Planning'], ['ACTIVE', 'Active'], ['ON_HOLD', 'On hold'], ['DONE', 'Done']];
+const STATUSES = [['PLANNING', 'Planning'], ['ACTIVE', 'Ongoing'], ['ON_HOLD', 'On hold'], ['DONE', 'Completed']];
 const LABELS = Object.fromEntries(STATUSES);
 const VIEW_KEY = 'projects-view';
 
@@ -49,6 +50,7 @@ async function renderList(container, page) {
     let view = savedView();
     let status = 'ALL';
     let tag = null;
+    let openOnly = false;
     const pickTag = picked => {
         tag = picked;
         draw();
@@ -76,18 +78,25 @@ async function renderList(container, page) {
                 draw();
             }),
             newButton());
-        const tagged = tag ? projects.filter(p => p.tags.includes(tag)) : projects;
+        const open = projects.filter(p => !openOnly || p.openForCollab);
+        const tagged = tag ? open.filter(p => p.tags.includes(tag)) : open;
+        const openToggle = button(['users', 'Open for collaboration'], 'filter-chip', () => {
+            openOnly = !openOnly;
+            draw();
+        });
+        openToggle.setAttribute('aria-pressed', String(openOnly));
         const tagFilter = tag && el('div', 'active-filter', 'Showing projects tagged ', tagPill(tag),
             button(['close', 'Clear'], 'link-button', () => pickTag(null)));
         if (view === 'board') {
-            container.replaceChildren(...[tagFilter, board(tagged, pickTag, move)].filter(Boolean));
+            container.replaceChildren(...[el('div', 'filters', openToggle), tagFilter,
+                board(tagged, pickTag, move)].filter(Boolean));
             return;
         }
         const shown = status === 'ALL' ? tagged : tagged.filter(p => p.status === status);
         const options = [['ALL', 'All', tagged.length],
             ...STATUSES.map(([key, label]) => [key, label, tagged.filter(p => p.status === key).length])];
         container.replaceChildren(...[
-            filterChips(options, status, key => { status = key; draw(); }),
+            el('div', 'toolbar', filterChips(options, status, key => { status = key; draw(); }), openToggle),
             tagFilter,
             shown.length > 0
                 ? el('div', 'card-list', ...shown.map((project, index) => projectCard(project, pickTag, index)))
@@ -102,7 +111,8 @@ function projectCard(project, pickTag, index = 0) {
     const link = el('a', 'stretched-link', project.title);
     link.href = '#projects/' + project.id;
     const card = el('article', 'card card-link project-card',
-        el('div', 'card-head', el('h3', 'card-title', link), statusChip(project.status)),
+        el('div', 'card-head', el('h3', 'card-title', link),
+            el('span', 'card-badges', collabBadge(project.openForCollab), statusChip(project.status))),
         project.description && el('p', 'card-text clamp', plainText(project.description)),
         tagList(project.tags, pickTag),
         el('div', 'card-foot',
@@ -212,9 +222,15 @@ export async function newProjectDialog() {
         el('summary', null, 'More details (optional)'),
         field('Description', description),
         markdownHint(),
-        field('Status', select('status', STATUSES, 'ACTIVE')),
+        el('div', 'field-row',
+            field('Status', select('status', STATUSES, 'ACTIVE')),
+            field('Started on', input('startedOn', { value: today(), type: 'date' })),
+            field('Collaboration', collabSelect(false))),
         field('Tags', tags),
         everyone.length > 0 && field('Teammates (you are added automatically)', picker));
+    const detailed = el('details', 'more',
+        el('summary', null, 'Detailed info: question, motivation, approach, resources, challenges (optional)'),
+        ...detailFields());
     const suggest = suggestButton(() => title.value + '\n' + description.value, suggestion => {
         title.value = suggestion.title;
         description.value = suggestion.description || '';
@@ -225,9 +241,13 @@ export async function newProjectDialog() {
         field('Title', title),
         el('div', 'autofill-row', suggest),
         more,
+        detailed,
     ], 'Create project', async values => {
-        const project = await sendJson('POST', '/api/projects',
-            { ...values, tags: splitTags(values.tags), memberIds: pickedIds(picker) });
+        const project = await sendJson('POST', '/api/projects', {
+            title: values.title, description: values.description, status: values.status,
+            startedOn: values.startedOn || null, openForCollab: values.openForCollab === 'true',
+            tags: splitTags(values.tags), memberIds: pickedIds(picker), details: detailsFrom(values),
+        });
         toast('Project created');
         location.hash = 'projects/' + project.id;
     });
@@ -240,16 +260,42 @@ async function editDialog(project, redraw) {
         field('Title', input('title', { value: project.title, required: true })),
         field('Description', textarea('description', { value: project.description || '', rows: 5 })),
         markdownHint(),
+        el('div', 'field-row',
+            field('Started on', input('startedOn', { value: project.startedOn, type: 'date', required: true })),
+            field('Collaboration', collabSelect(project.openForCollab))),
         field('Tags', tagPicker('tags', project.tags)),
         picker && field('Members', picker),
+        detailedInfo(project.details),
     ].filter(Boolean), 'Save', async values => {
-        const changes = { ...values, tags: splitTags(values.tags) };
+        const changes = {
+            title: values.title, description: values.description, startedOn: values.startedOn,
+            openForCollab: values.openForCollab === 'true', tags: splitTags(values.tags),
+            details: detailsFrom(values),
+        };
         if (picker) {
             changes.memberIds = pickedIds(picker);
         }
         redraw(await sendJson('PATCH', '/api/projects/' + project.id, changes));
         toast('Project saved');
     });
+}
+
+// open straight away when there is something in it, so the person sees what they wrote
+function detailedInfo(details) {
+    const section = el('details', 'more',
+        el('summary', null, 'Detailed info: question, motivation, approach, resources, challenges'),
+        ...detailFields(details));
+    section.open = hasDetails(details);
+    return section;
+}
+
+function today() {
+    const now = new Date();
+    return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
+function formatDay(isoDate) {
+    return new Date(isoDate + 'T00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 /* One project */
@@ -278,8 +324,9 @@ async function renderProject(container, page, id) {
                 'started ' + relativeTime(project.createdAt)].filter(Boolean).join(' · ')));
         page.actions.replaceChildren(button(['edit', 'Edit'], 'button button-secondary', () => editDialog(project, redraw)));
         const about = project.description && el('div', 'card', markdown(project.description));
+        const write = hasDetails(project.details) && el('div', 'card detail-parts', ...detailSections(project.details));
         container.replaceChildren(el('div', 'detail-layout',
-            el('div', 'detail-main', about, composer(project, redraw),
+            el('div', 'detail-main', about, write, composer(project, redraw),
                 el('h2', 'section-title', 'Timeline'), timeline(project.timeline)),
             el('aside', 'card detail-side', ...sidePanel(project, redraw))));
     };
@@ -299,6 +346,9 @@ function sideSection(title, ...children) {
 function sidePanel(project, redraw) {
     return [
         sideSection('Status', statusPicker(project, redraw)),
+        sideSection('Started', el('p', 'side-text', formatDay(project.startedOn))),
+        sideSection('Collaboration', el('p', 'side-text',
+            project.openForCollab ? 'Open: others can ask to join' : 'Closed or solo')),
         sideSection('Members', project.members.length > 0
             ? el('ul', 'people', ...project.members.map(person =>
                 el('li', 'person', avatar(person.name), el('span', null, person.name))))

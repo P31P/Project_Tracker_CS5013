@@ -24,7 +24,9 @@ import tracker.data.ProjectLinkRepository;
 import tracker.data.ProjectRepository;
 import tracker.data.ProjectUpdate;
 import tracker.data.ProjectUpdateRepository;
+import tracker.data.ResearchDetails;
 import tracker.data.UpdateKind;
+import tracker.projects.ProjectDtos.Details;
 import tracker.projects.ProjectDtos.LinkRequest;
 import tracker.projects.ProjectDtos.LinkView;
 import tracker.projects.ProjectDtos.Person;
@@ -41,6 +43,8 @@ import tracker.projects.ProjectDtos.TimelineEntry;
 @Service
 @Transactional
 public class ProjectService {
+
+    static final int MAX_DETAIL = 5000;
 
     private final ProjectRepository projects;
     private final ProjectUpdateRepository updates;
@@ -115,6 +119,13 @@ public class ProjectService {
             project.setStatus(request.status());
         }
         project.setTags(tags(request.tags()));
+        if (request.startedOn() != null) {
+            project.setStartedOn(request.startedOn());
+        }
+        if (request.details() != null) {
+            project.setDetails(details(request.details()));
+        }
+        project.setOpenForCollab(Boolean.TRUE.equals(request.openForCollab()));
         project.setOwner(owner);
         if (owner != null) {
             project.getMembers().add(users.getReferenceById(owner.getId()));
@@ -145,6 +156,15 @@ public class ProjectService {
         }
         if (request.tags() != null) {
             project.setTags(tags(request.tags()));
+        }
+        if (request.startedOn() != null) {
+            project.setStartedOn(request.startedOn());
+        }
+        if (request.details() != null) {
+            project.setDetails(details(request.details()));
+        }
+        if (request.openForCollab() != null) {
+            project.setOpenForCollab(request.openForCollab());
         }
         if (request.memberIds() != null) {
             List<AppUser> members = members(request.memberIds());
@@ -226,7 +246,7 @@ public class ProjectService {
                 .filter(keep)
                 .map(p -> new ProjectSummary(p.getId(), p.getTitle(), p.getDescription(), p.getStatus(),
                         CurrentUser.nameOf(p.getOwner()), p.getTags(), people(p.getMembers()), p.getCreatedAt(),
-                        p.getUpdatedAt(), counts.getOrDefault(p.getId(), 0L)))
+                        p.getUpdatedAt(), counts.getOrDefault(p.getId(), 0L), p.getStartedOn(), p.isOpenForCollab()))
                 .toList();
     }
 
@@ -252,7 +272,41 @@ public class ProjectService {
                 .toList();
         return new ProjectDetail(p.getId(), p.getTitle(), p.getDescription(), p.getStatus(),
                 CurrentUser.nameOf(p.getOwner()), p.getTags(), people(p.getMembers()), linkViews, p.getCreatedAt(),
-                p.getUpdatedAt(), timeline);
+                p.getUpdatedAt(), timeline, p.getStartedOn(), view(p.getDetails()), p.isOpenForCollab(),
+                p.getCollabOpenedAt());
+    }
+
+    /**
+     * Tidies a write-up: each part is trimmed, and a blank part becomes none.
+     *
+     * @param request the five parts as sent
+     * @return the details to store
+     * @throws ResponseStatusException {@code 400} if a part is longer than 5000 characters
+     */
+    static ResearchDetails details(Details request) {
+        return new ResearchDetails(detail(request.coreQuestion(), "core question"),
+                detail(request.motivation(), "motivation"), detail(request.approach(), "approach"),
+                detail(request.resources(), "data and resources"), detail(request.challenges(), "challenges"));
+    }
+
+    /**
+     * Turns stored details into what the API returns.
+     *
+     * @param details the stored details
+     * @return the same five parts
+     */
+    static Details view(ResearchDetails details) {
+        return new Details(details.getCoreQuestion(), details.getMotivation(), details.getApproach(),
+                details.getResources(), details.getChallenges());
+    }
+
+    private static String detail(String text, String what) {
+        String tidied = blankToNull(text);
+        if (tidied != null && tidied.length() > MAX_DETAIL) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The " + what + " can be at most " + MAX_DETAIL + " characters");
+        }
+        return tidied;
     }
 
     private static TimelineEntry entry(ProjectUpdate u) {

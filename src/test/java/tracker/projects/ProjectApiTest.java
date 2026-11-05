@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -69,7 +70,7 @@ class ProjectApiTest extends PostgresTestBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("DONE"))
                 .andExpect(jsonPath("$.timeline[0].kind").value("STATUS"))
-                .andExpect(jsonPath("$.timeline[0].body").value("Status changed from Active to Done"));
+                .andExpect(jsonPath("$.timeline[0].body").value("Status changed from Ongoing to Completed"));
     }
 
     @Test
@@ -169,6 +170,61 @@ class ProjectApiTest extends PostgresTestBase {
         mvc.perform(delete("/api/projects/" + id + "/links/" + linkId).with(SUJAL).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.links").isEmpty());
+    }
+
+    @Test
+    void aNewProjectStartsTodayClosedAndWithoutDetails() throws Exception {
+        send(post("/api/projects"), "{\"title\": \"Only a title\"}")
+                .andExpect(jsonPath("$.startedOn").value(LocalDate.now().toString()))
+                .andExpect(jsonPath("$.openForCollab").value(false))
+                .andExpect(jsonPath("$.collabOpenedAt").isEmpty())
+                .andExpect(jsonPath("$.details.coreQuestion").isEmpty());
+    }
+
+    @Test
+    void everyFieldIsSavedAndBlankPartsBecomeEmpty() throws Exception {
+        send(post("/api/projects"), "{\"title\": \"Flux sampling\", \"startedOn\": \"2026-01-15\","
+                + " \"openForCollab\": true, \"details\": {\"coreQuestion\": \" Which sampler is fastest? \","
+                + " \"motivation\": \"Models are slow\", \"approach\": \"Benchmark three\","
+                + " \"resources\": \"BiGG models\", \"challenges\": \"  \"}}")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.startedOn").value("2026-01-15"))
+                .andExpect(jsonPath("$.openForCollab").value(true))
+                .andExpect(jsonPath("$.collabOpenedAt").isNotEmpty())
+                .andExpect(jsonPath("$.details.coreQuestion").value("Which sampler is fastest?"))
+                .andExpect(jsonPath("$.details.resources").value("BiGG models"))
+                .andExpect(jsonPath("$.details.challenges").isEmpty());
+    }
+
+    @Test
+    void closingCollaborationClearsWhenItOpened() throws Exception {
+        long id = create("Open then closed");
+        send(patch("/api/projects/" + id), "{\"openForCollab\": true}")
+                .andExpect(jsonPath("$.collabOpenedAt").isNotEmpty());
+
+        send(patch("/api/projects/" + id), "{\"openForCollab\": false}")
+                .andExpect(jsonPath("$.openForCollab").value(false))
+                .andExpect(jsonPath("$.collabOpenedAt").isEmpty());
+    }
+
+    @Test
+    void aPatchWithoutDetailsKeepsThem() throws Exception {
+        long id = create("Keeps details");
+        send(patch("/api/projects/" + id), "{\"details\": {\"motivation\": \"Because\"}}");
+
+        send(patch("/api/projects/" + id), "{\"title\": \"Renamed\"}")
+                .andExpect(jsonPath("$.details.motivation").value("Because"));
+        mvc.perform(get("/api/projects").with(SUJAL))
+                .andExpect(jsonPath("$[0].startedOn").isNotEmpty())
+                .andExpect(jsonPath("$[0].openForCollab").value(false));
+    }
+
+    @Test
+    void tooLongADetailIsRefused() throws Exception {
+        send(post("/api/projects"), "{\"title\": \"Long\", \"details\": {\"approach\": \""
+                + "a".repeat(ProjectService.MAX_DETAIL + 1) + "\"}}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("The approach can be at most 5000 characters"));
     }
 
     private long personId(String name) throws Exception {

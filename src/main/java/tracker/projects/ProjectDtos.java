@@ -1,5 +1,6 @@
 package tracker.projects;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import tracker.data.ProjectStatus;
@@ -22,9 +23,25 @@ public final class ProjectDtos {
      * @param status the status; {@code ACTIVE} if left out when creating
      * @param tags the tags, tidied by the server
      * @param memberIds the ids of the members; when changing, replaces the current members
+     * @param startedOn the start date; today if left out when creating
+     * @param details the longer write-up; when changing, replaces all five parts
+     * @param openForCollab whether others can ask to join; {@code false} if left out when creating
      */
     public record ProjectRequest(String title, String description, ProjectStatus status, List<String> tags,
-                                 List<Long> memberIds) {
+                                 List<Long> memberIds, LocalDate startedOn, Details details, Boolean openForCollab) {
+    }
+
+    /**
+     * The longer write-up of a project or an idea. Every part is optional Markdown; a blank part is stored as none.
+     *
+     * @param coreQuestion the question it tries to answer
+     * @param motivation why it matters
+     * @param approach how it could be done
+     * @param resources the data and resources it needs
+     * @param challenges what could make it hard
+     */
+    public record Details(String coreQuestion, String motivation, String approach, String resources,
+                          String challenges) {
     }
 
     /**
@@ -50,8 +67,11 @@ public final class ProjectDtos {
      * @param title the idea; must not be blank
      * @param description more detail; optional
      * @param tags the tags, tidied by the server; optional
+     * @param details the longer write-up; optional
+     * @param openForCollab whether the author is looking for people to work on it with; optional
      */
-    public record IdeaRequest(String title, String description, List<String> tags) {
+    public record IdeaRequest(String title, String description, List<String> tags, Details details,
+                              Boolean openForCollab) {
     }
 
     /**
@@ -86,10 +106,13 @@ public final class ProjectDtos {
      * @param createdAt when it was created
      * @param updatedAt when it last changed
      * @param updateCount how many entries its timeline has
+     * @param startedOn the start date
+     * @param openForCollab whether others can ask to join
      */
     public record ProjectSummary(Long id, String title, String description, ProjectStatus status, String ownerName,
                                  List<String> tags, List<Person> members, OffsetDateTime createdAt,
-                                 OffsetDateTime updatedAt, long updateCount) {
+                                 OffsetDateTime updatedAt, long updateCount, LocalDate startedOn,
+                                 boolean openForCollab) {
     }
 
     /**
@@ -106,10 +129,16 @@ public final class ProjectDtos {
      * @param createdAt when it was created
      * @param updatedAt when it last changed
      * @param timeline the timeline, newest first
+     * @param startedOn the start date
+     * @param details the longer write-up
+     * @param openForCollab whether others can ask to join
+     * @param collabOpenedAt when it was opened for collaboration, or {@code null} if it isn't open
      */
     public record ProjectDetail(Long id, String title, String description, ProjectStatus status, String ownerName,
                                 List<String> tags, List<Person> members, List<LinkView> links,
-                                OffsetDateTime createdAt, OffsetDateTime updatedAt, List<TimelineEntry> timeline) {
+                                OffsetDateTime createdAt, OffsetDateTime updatedAt, List<TimelineEntry> timeline,
+                                LocalDate startedOn, Details details, boolean openForCollab,
+                                OffsetDateTime collabOpenedAt) {
     }
 
     /**
@@ -138,10 +167,12 @@ public final class ProjectDtos {
      * @param voteCount how many people voted for it
      * @param votedByMe whether the signed-in user voted for it
      * @param commentCount how many comments its discussion has
+     * @param details the longer write-up
+     * @param openForCollab whether the author is looking for people to work on it with
      */
     public record IdeaView(Long id, String title, String description, String authorName, List<String> tags,
                            OffsetDateTime createdAt, Long projectId, String projectTitle, int voteCount,
-                           boolean votedByMe, long commentCount) {
+                           boolean votedByMe, long commentCount, Details details, boolean openForCollab) {
     }
 
     /**

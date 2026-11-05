@@ -144,6 +144,27 @@ class IdeaApiTest extends PostgresTestBase {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void anIdeaKeepsItsDetailsAndCollaboration() throws Exception {
+        postIdea("{\"title\": \"Graph neural nets for flux\", \"openForCollab\": true,"
+                + " \"details\": {\"coreQuestion\": \"Can a GNN predict flux?\", \"challenges\": \"Little data\"}}")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.openForCollab").value(true))
+                .andExpect(jsonPath("$.details.coreQuestion").value("Can a GNN predict flux?"))
+                .andExpect(jsonPath("$.details.motivation").isEmpty());
+    }
+
+    @Test
+    void promotingCopiesTheDetailsAndCollaboration() throws Exception {
+        long ideaId = idOf(postIdea("{\"title\": \"Detailed idea\", \"openForCollab\": true,"
+                + " \"details\": {\"approach\": \"Try it on E. coli first\"}}"));
+
+        mvc.perform(post("/api/ideas/" + ideaId + "/promote").with(SUJAL).with(csrf()))
+                .andExpect(jsonPath("$.details.approach").value("Try it on E. coli first"))
+                .andExpect(jsonPath("$.openForCollab").value(true))
+                .andExpect(jsonPath("$.collabOpenedAt").isNotEmpty());
+    }
+
     private ResultActions comment(long ideaId, String json) throws Exception {
         return mvc.perform(post("/api/ideas/" + ideaId + "/comments").with(SUJAL).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(json));

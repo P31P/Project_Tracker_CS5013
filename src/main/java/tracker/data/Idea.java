@@ -1,6 +1,7 @@
 package tracker.data;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -45,6 +46,12 @@ public class Idea {
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(columnDefinition = "text[]", nullable = false)
     private List<String> tags = new ArrayList<>();
+
+    @Embedded
+    private ResearchDetails details = new ResearchDetails();
+
+    @Column(name = "open_for_collab", nullable = false)
+    private boolean openForCollab;
 
     @ManyToMany
     @JoinTable(name = "idea_vote",
@@ -143,6 +150,43 @@ public class Idea {
      */
     public void setTags(List<String> tags) {
         this.tags = new ArrayList<>(tags);
+    }
+
+    /**
+     * Returns the longer write-up: core question, motivation, approach, resources and challenges.
+     *
+     * @return the details; never {@code null}, though every part may be
+     */
+    public ResearchDetails getDetails() {
+        // Hibernate loads an embedded value whose columns are all empty as null
+        return details == null ? new ResearchDetails() : details;
+    }
+
+    /**
+     * Replaces the longer write-up.
+     *
+     * @param details the new details, already tidied by the caller
+     */
+    public void setDetails(ResearchDetails details) {
+        this.details = details;
+    }
+
+    /**
+     * Says whether the author is looking for people to work on the idea with.
+     *
+     * @return {@code true} if it is open for collaboration
+     */
+    public boolean isOpenForCollab() {
+        return openForCollab;
+    }
+
+    /**
+     * Opens or closes the idea for collaboration.
+     *
+     * @param open {@code true} to open it
+     */
+    public void setOpenForCollab(boolean open) {
+        this.openForCollab = open;
     }
 
     /**
