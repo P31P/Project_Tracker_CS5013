@@ -7,9 +7,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-/** A person who can be allowed to sign in, stored in {@code app_user}. */
+/** A person who can be allowed to sign in, stored in {@code app_user}, with the profile they fill in. */
 @Entity
 @Table(name = "app_user")
 public class AppUser {
@@ -25,6 +29,14 @@ public class AppUser {
 
     @Column(nullable = false)
     private boolean allowlisted;
+
+    private String bio;
+
+    private String background;
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(columnDefinition = "text[]", nullable = false)
+    private List<String> interests = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -97,5 +109,59 @@ public class AppUser {
      */
     public OffsetDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    /**
+     * Returns the person's introduction, in Markdown, or {@code null} if they haven't written one.
+     *
+     * @return the introduction, or {@code null}
+     */
+    public String getBio() {
+        return bio;
+    }
+
+    /**
+     * Changes the introduction.
+     *
+     * @param bio the new introduction; may be {@code null}
+     */
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    /**
+     * Returns the person's study background, such as "PhD, systems biology", or {@code null}.
+     *
+     * @return the background, or {@code null}
+     */
+    public String getBackground() {
+        return background;
+    }
+
+    /**
+     * Changes the study background.
+     *
+     * @param background the new background; may be {@code null}
+     */
+    public void setBackground(String background) {
+        this.background = background;
+    }
+
+    /**
+     * Returns the person's fields of interest, as tags.
+     *
+     * @return the interests, lowercased and without duplicates
+     */
+    public List<String> getInterests() {
+        return interests;
+    }
+
+    /**
+     * Replaces the interests with a copy of the given list.
+     *
+     * @param interests the new interests, already tidied by the caller
+     */
+    public void setInterests(List<String> interests) {
+        this.interests = new ArrayList<>(interests);
     }
 }

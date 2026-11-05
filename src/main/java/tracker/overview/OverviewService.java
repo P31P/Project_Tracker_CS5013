@@ -14,11 +14,14 @@ import tracker.data.ProjectRepository;
 import tracker.data.ProjectStatus;
 import tracker.data.ProjectUpdateRepository;
 import tracker.data.UpdateKind;
+import tracker.profile.IdeaSummary;
+import tracker.profile.InterestMatches;
 import tracker.projects.ProjectDtos.ProjectSummary;
 import tracker.projects.ProjectService;
 
 /**
- * Builds the Home tab: lab-wide numbers, the user's own projects and what happened lately.
+ * Builds the Home tab: lab-wide numbers, the user's own projects and ideas, what happened lately, and new work
+ * that matches their interests.
  */
 @Service
 @Transactional(readOnly = true)
@@ -32,8 +35,11 @@ public class OverviewService {
      * @param counts lab-wide numbers
      * @param mine the signed-in user's projects, most recently changed first
      * @param activity the newest events, newest first
+     * @param myIdeas the ideas the signed-in user wrote, newest first
+     * @param forYou new ideas and papers that match the user's interests, newest first
      */
-    public record Overview(Counts counts, List<ProjectSummary> mine, List<Activity> activity) {
+    public record Overview(Counts counts, List<ProjectSummary> mine, List<Activity> activity,
+                           List<IdeaSummary> myIdeas, List<InterestMatches.Match> forYou) {
     }
 
     /**
@@ -69,6 +75,7 @@ public class OverviewService {
     private final IdeaRepository ideas;
     private final PaperRepository papers;
     private final ProjectService projectService;
+    private final InterestMatches interestMatches;
 
     /**
      * Creates the service.
@@ -78,27 +85,37 @@ public class OverviewService {
      * @param ideas where ideas are stored
      * @param papers where papers are stored
      * @param projectService finds the user's projects
+     * @param interestMatches finds new work that matches the user's interests
      */
     public OverviewService(ProjectRepository projects, ProjectUpdateRepository updates, IdeaRepository ideas,
-                           PaperRepository papers, ProjectService projectService) {
+                           PaperRepository papers, ProjectService projectService, InterestMatches interestMatches) {
         this.projects = projects;
         this.updates = updates;
         this.ideas = ideas;
         this.papers = papers;
         this.projectService = projectService;
+        this.interestMatches = interestMatches;
     }
 
     /**
      * Builds the Home tab for a user.
      *
-     * @param user the signed-in user; may be {@code null}, which leaves out "your projects"
-     * @return the numbers, the user's projects and the latest activity
+     * @param user the signed-in user; may be {@code null}, which leaves out their projects, ideas and matches
+     * @return the numbers, the user's projects and ideas, the latest activity and the matches
      */
     public Overview overview(AppUser user) {
         Counts counts = new Counts(projects.countByStatus(ProjectStatus.PLANNING),
                 projects.countByStatus(ProjectStatus.ACTIVE), projects.countByStatus(ProjectStatus.ON_HOLD),
                 projects.countByStatus(ProjectStatus.DONE), ideas.countByProjectIsNull(), papers.count());
-        return new Overview(counts, projectService.involving(user), activity());
+        return new Overview(counts, projectService.involving(user), activity(), myIdeas(user),
+                interestMatches.forUser(user));
+    }
+
+    private List<IdeaSummary> myIdeas(AppUser user) {
+        if (user == null) {
+            return List.of();
+        }
+        return ideas.findByAuthorIdOrderByCreatedAtDescIdDesc(user.getId()).stream().map(IdeaSummary::of).toList();
     }
 
     // the latest few of each kind, merged and cut down to the newest FEED_SIZE

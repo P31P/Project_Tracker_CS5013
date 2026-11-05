@@ -23,6 +23,15 @@ public interface IdeaRepository extends JpaRepository<Idea, Long> {
     List<Idea> findTop10ByOrderByCreatedAtDescIdDesc();
 
     /**
+     * Lists the ideas a person wrote, newest first, with voters and projects loaded in the same query.
+     *
+     * @param authorId the author's id
+     * @return their ideas
+     */
+    @EntityGraph(attributePaths = {"project", "voters"})
+    List<Idea> findByAuthorIdOrderByCreatedAtDescIdDesc(Long authorId);
+
+    /**
      * Counts the ideas that have not become projects.
      *
      * @return the number of open ideas

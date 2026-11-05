@@ -1,10 +1,12 @@
-// Home tab: lab-wide numbers, the projects you are part of, and what happened lately.
+// Home tab: your profile, lab-wide numbers, your projects and ideas, and what happened lately, with the new
+// ideas and papers that match your interests under "For you".
 
 import { getJson } from './api.js';
 import { icon } from './icons.js';
 import { plainText } from './markdown.js';
+import { profileCard } from './profile.js';
 import { newProjectDialog, statusChip } from './projects.js';
-import { avatarStack, button, el, emptyState, errorState, relativeTime, skeleton } from './ui.js';
+import { avatarStack, button, el, emptyState, errorState, filterChips, relativeTime, skeleton, tagPill } from './ui.js';
 
 const FEED_ICONS = { NOTE: 'message', STATUS: 'refresh', PROJECT: 'folder', IDEA: 'bulb', PAPER: 'paper' };
 
@@ -12,22 +14,31 @@ export async function renderHome(container, page) {
     page.actions.append(
         button(['bulb', 'New idea'], 'button button-secondary', () => { location.hash = 'ideas'; }),
         button(['plus', 'New project'], 'button', () => newProjectDialog()));
+    await load(container, page);
+}
+
+async function load(container, page) {
     container.replaceChildren(skeleton(3));
 
     let overview;
     let ideas;
+    let profile;
     try {
-        [overview, ideas] = await Promise.all([getJson('/api/overview'), getJson('/api/ideas')]);
+        [overview, ideas, profile] = await Promise.all(
+            [getJson('/api/overview'), getJson('/api/ideas'), getJson('/api/profile')]);
     } catch (problem) {
         container.replaceChildren(errorState('Could not load the overview. ' + problem.message));
         return;
     }
-    const me = await getJson('/api/me').catch(() => null);
-    const firstName = me && me.name ? me.name.split(' ')[0] : null;
+    // the name falls back to the email when Google gave none, and an email makes an odd greeting
+    const firstName = profile.name && !profile.name.includes('@') ? profile.name.split(' ')[0] : null;
     page.heading.textContent = greeting() + (firstName ? ', ' + firstName : '');
 
+    // saving the profile changes "For you" too, so the whole page is drawn again
+    const card = profileCard(profile, () => load(container, page));
     const counts = overview.counts;
     container.replaceChildren(
+        card,
         el('div', 'stats',
             statCard('Active projects', counts.active, '#projects'),
             statCard('In planning', counts.planning, '#projects'),
@@ -38,11 +49,52 @@ export async function renderHome(container, page) {
             el('section', 'home-section',
                 sectionHead('Your projects', '#projects', 'All projects'),
                 myProjects(overview.mine),
-                sectionHead('Popular ideas', '#ideas', 'All ideas'),
+                sectionHead('Your ideas', '#ideas', 'All ideas'),
+                myIdeas(overview.myIdeas),
+                sectionHead('Popular ideas'),
                 popularIdeas(ideas)),
-            el('section', 'home-section',
-                sectionHead('Recent activity'),
-                feed(overview.activity))));
+            activitySection(overview, profile)));
+}
+
+// "For you" first when something matches, so the page opens on what is relevant to this person
+function activitySection(overview, profile) {
+    const section = el('section', 'home-section');
+    let shown = overview.forYou.length > 0 ? 'FOR_YOU' : 'ALL';
+    const draw = () => {
+        const chips = filterChips([['FOR_YOU', 'For you', overview.forYou.length],
+            ['ALL', 'Everything', overview.activity.length]], shown, key => { shown = key; draw(); });
+        section.replaceChildren(sectionHead('Recent activity'), chips,
+            shown === 'ALL' ? feed(overview.activity) : forYou(overview.forYou, profile));
+    };
+    draw();
+    return section;
+}
+
+function forYou(items, profile) {
+    if (items.length > 0) {
+        return feed(items);
+    }
+    return profile.interests.length === 0
+        ? emptyState('Nothing picked for you yet',
+            'Add your fields of interest to your profile, and new ideas and papers on those topics will show up here.',
+            null, 'tag')
+        : emptyState('Nothing new on your topics',
+            'No new ideas or papers in the last 30 days match your interests.', null, 'tag');
+}
+
+function myIdeas(ideas) {
+    if (ideas.length === 0) {
+        return el('p', 'muted', 'Ideas you share show up here.');
+    }
+    return el('div', 'card mini-list', ...ideas.slice(0, 5).map(idea => {
+        const row = el('a', 'mini-project',
+            el('span', 'mini-votes', icon('up', 14), String(idea.voteCount)),
+            el('span', 'mini-main', el('span', 'mini-title', idea.title),
+                el('span', 'mini-meta', idea.projectId !== null
+                    ? 'became a project' : 'shared ' + relativeTime(idea.createdAt))));
+        row.href = idea.projectId !== null ? '#projects/' + idea.projectId : '#ideas';
+        return row;
+    }));
 }
 
 function greeting() {
@@ -117,6 +169,7 @@ function feed(items) {
                 el('p', 'feed-text', item.who && el('strong', null, item.who), item.who ? ' ' + item.action + ' ' : item.action + ': ',
                     target),
                 item.excerpt && el('p', 'feed-excerpt clamp', plainText(item.excerpt)),
+                item.interest && el('p', 'feed-match', 'Matches your interest', tagPill(item.interest)),
                 el('p', 'feed-time', relativeTime(item.at))));
     }));
 }
