@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,11 @@ import org.springframework.web.server.ResponseStatusException;
 import tracker.auth.CurrentUser;
 import tracker.data.AppUser;
 import tracker.data.AppUserRepository;
+import tracker.data.Paper;
+import tracker.data.PaperRepository;
 import tracker.data.Project;
+import tracker.data.ProjectComment;
+import tracker.data.ProjectCommentRepository;
 import tracker.data.ProjectLink;
 import tracker.data.ProjectLinkRepository;
 import tracker.data.ProjectRepository;
@@ -26,9 +31,11 @@ import tracker.data.ProjectUpdate;
 import tracker.data.ProjectUpdateRepository;
 import tracker.data.ResearchDetails;
 import tracker.data.UpdateKind;
+import tracker.projects.ProjectDtos.CommentView;
 import tracker.projects.ProjectDtos.Details;
 import tracker.projects.ProjectDtos.LinkRequest;
 import tracker.projects.ProjectDtos.LinkView;
+import tracker.projects.ProjectDtos.PaperRef;
 import tracker.projects.ProjectDtos.Person;
 import tracker.projects.ProjectDtos.ProjectDetail;
 import tracker.projects.ProjectDtos.ProjectRequest;
@@ -36,7 +43,8 @@ import tracker.projects.ProjectDtos.ProjectSummary;
 import tracker.projects.ProjectDtos.TimelineEntry;
 
 /**
- * Creates, changes and reads projects, their timelines, members, tags and links.
+ * Creates, changes and reads projects, their timelines, members, tags, links, referenced papers, votes and
+ * discussions.
  *
  * <p>Errors are thrown as {@link ResponseStatusException}s with a readable reason.
  */
@@ -50,6 +58,8 @@ public class ProjectService {
     private final ProjectUpdateRepository updates;
     private final ProjectLinkRepository links;
     private final AppUserRepository users;
+    private final PaperRepository papers;
+    private final ProjectCommentRepository comments;
 
     /**
      * Creates the service.
@@ -58,13 +68,17 @@ public class ProjectService {
      * @param updates where timeline entries are stored
      * @param links where project links are stored
      * @param users where users are stored
+     * @param papers where the archive's papers are stored
+     * @param comments where the projects' discussions are stored
      */
     public ProjectService(ProjectRepository projects, ProjectUpdateRepository updates, ProjectLinkRepository links,
-                          AppUserRepository users) {
+                          AppUserRepository users, PaperRepository papers, ProjectCommentRepository comments) {
         this.projects = projects;
         this.updates = updates;
         this.links = links;
         this.users = users;
+        this.papers = papers;
+        this.comments = comments;
     }
 
     /**
@@ -96,12 +110,13 @@ public class ProjectService {
      * Returns one project with its timeline and links.
      *
      * @param id the project's id
+     * @param viewer the signed-in user, to say whether they voted; may be {@code null}
      * @return the project
      * @throws ResponseStatusException {@code 404} if there is no project with this id
      */
     @Transactional(readOnly = true)
-    public ProjectDetail get(Long id) {
-        return detail(find(id));
+    public ProjectDetail get(Long id, AppUser viewer) {
+        return detail(find(id), viewer);
     }
 
     /**
@@ -133,7 +148,7 @@ public class ProjectService {
         if (request.memberIds() != null) {
             project.getMembers().addAll(members(request.memberIds()));
         }
-        return detail(projects.save(project));
+        return detail(projects.save(project), owner);
     }
 
     /**
@@ -177,7 +192,7 @@ public class ProjectService {
             project.setStatus(request.status());
         }
         project.touch();
-        return detail(project);
+        return detail(project, actor);
     }
 
     /**
@@ -203,20 +218,33 @@ public class ProjectService {
      *
      * @param id the project's id
      * @param request the link
+     * @param viewer the signed-in user
      * @return the project with the new link
      * @throws ResponseStatusException {@code 404} if there is no such project, or {@code 400} if
      *         the address is missing or isn't an http(s) web address
      */
-    public ProjectDetail addLink(Long id, LinkRequest request) {
+    public ProjectDetail addLink(Long id, LinkRequest request, AppUser viewer) {
         Project project = find(id);
+        LinkView link = checkedLink(request);
+        links.save(new ProjectLink(project, link.label(), link.url()));
+        project.touch();
+        return detail(project, viewer);
+    }
+
+    /**
+     * Checks a link before it is stored, and picks its label: the one given, or the site's name.
+     *
+     * @param request the link as sent
+     * @return the label and address to store (without an id)
+     * @throws ResponseStatusException {@code 400} if the address is missing or isn't an http(s) web address
+     */
+    static LinkView checkedLink(LinkRequest request) {
         String url = required(request.url(), "A link needs a URL");
         String host = webHost(url);
         String label = request.label() == null || request.label().isBlank()
                 ? host.replaceFirst("^www\\.", "")
                 : request.label().trim();
-        links.save(new ProjectLink(project, label, url));
-        project.touch();
-        return detail(project);
+        return new LinkView(null, label, url);
     }
 
     /**
@@ -224,17 +252,150 @@ public class ProjectService {
      *
      * @param id the project's id
      * @param linkId the link's id
+     * @param viewer the signed-in user
      * @return the project without the link
      * @throws ResponseStatusException {@code 404} if there is no such project or no such link
      *         on it
      */
-    public ProjectDetail removeLink(Long id, Long linkId) {
+    public ProjectDetail removeLink(Long id, Long linkId, AppUser viewer) {
         Project project = find(id);
         ProjectLink link = links.findByIdAndProjectId(linkId, id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No link with id " + linkId));
         links.delete(link);
         project.touch();
-        return detail(project);
+        return detail(project, viewer);
+    }
+
+    /**
+     * Lists a paper from the archive as one of the project's references. Adding it twice changes nothing.
+     *
+     * @param id the project's id
+     * @param paperId the paper's id
+     * @param viewer the signed-in user
+     * @return the project with the paper
+     * @throws ResponseStatusException {@code 404} if there is no such project, {@code 400} if there is no such paper
+     */
+    public ProjectDetail addPaper(Long id, Long paperId, AppUser viewer) {
+        Project project = find(id);
+        project.getPapers().add(paper(papers, paperId));
+        project.touch();
+        return detail(project, viewer);
+    }
+
+    /**
+     * Takes a paper off the project's references.
+     *
+     * @param id the project's id
+     * @param paperId the paper's id
+     * @param viewer the signed-in user
+     * @return the project without the paper
+     * @throws ResponseStatusException {@code 404} if there is no such project
+     */
+    public ProjectDetail removePaper(Long id, Long paperId, AppUser viewer) {
+        Project project = find(id);
+        project.getPapers().removeIf(paper -> paper.getId().equals(paperId));
+        project.touch();
+        return detail(project, viewer);
+    }
+
+    /**
+     * Records that a user likes a project. Voting twice counts once.
+     *
+     * @param id the project's id
+     * @param voter who is voting; if {@code null}, nothing is recorded
+     * @return the project with its new vote count
+     * @throws ResponseStatusException {@code 404} if there is no project with this id
+     */
+    public ProjectDetail vote(Long id, AppUser voter) {
+        Project project = find(id);
+        if (voter != null && !votedBy(project.getVoters(), voter)) {
+            project.getVoters().add(users.getReferenceById(voter.getId()));
+        }
+        return detail(project, voter);
+    }
+
+    /**
+     * Takes back a user's vote. Does nothing if they hadn't voted.
+     *
+     * @param id the project's id
+     * @param voter whose vote to remove; if {@code null}, nothing changes
+     * @return the project with its new vote count
+     * @throws ResponseStatusException {@code 404} if there is no project with this id
+     */
+    public ProjectDetail unvote(Long id, AppUser voter) {
+        Project project = find(id);
+        if (voter != null) {
+            project.getVoters().removeIf(user -> user.getId().equals(voter.getId()));
+        }
+        return detail(project, voter);
+    }
+
+    /**
+     * Lists a project's discussion, oldest first.
+     *
+     * @param id the project's id
+     * @return the comments
+     * @throws ResponseStatusException {@code 404} if there is no project with this id
+     */
+    @Transactional(readOnly = true)
+    public List<CommentView> comments(Long id) {
+        find(id);
+        return comments.findByProjectIdOrderByCreatedAtAscIdAsc(id).stream()
+                .map(comment -> new CommentView(comment.getId(), comment.getBody(),
+                        CurrentUser.nameOf(comment.getAuthor()), comment.getCreatedAt()))
+                .toList();
+    }
+
+    /**
+     * Adds a comment to a project's discussion.
+     *
+     * @param id the project's id
+     * @param body the comment
+     * @param author who wrote it; may be {@code null}
+     * @return the new comment
+     * @throws ResponseStatusException {@code 404} if there is no such project, or {@code 400} if the comment is blank
+     */
+    public CommentView addComment(Long id, String body, AppUser author) {
+        Project project = find(id);
+        ProjectComment comment = comments.save(
+                new ProjectComment(project, author, required(body, "A comment can't be empty")));
+        return new CommentView(comment.getId(), comment.getBody(), CurrentUser.nameOf(comment.getAuthor()),
+                comment.getCreatedAt());
+    }
+
+    /**
+     * Finds a paper to list as a reference.
+     *
+     * @param papers where papers are stored
+     * @param paperId the paper's id; may be {@code null}
+     * @return the paper
+     * @throws ResponseStatusException {@code 400} if there is no such paper
+     */
+    static Paper paper(PaperRepository papers, Long paperId) {
+        if (paperId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pick a paper from the archive");
+        }
+        return papers.findById(paperId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No such paper in the archive"));
+    }
+
+    /**
+     * Turns referenced papers into what the API returns, by title.
+     *
+     * @param referenced the papers
+     * @return the same papers, sorted by title
+     */
+    static List<PaperRef> paperRefs(Set<Paper> referenced) {
+        return referenced.stream()
+                .map(paper -> new PaperRef(paper.getId(),
+                        paper.getTitle() != null ? paper.getTitle() : paper.getNormalizedUrl(), paper.getNormalizedUrl()))
+                .sorted(Comparator.comparing(PaperRef::title, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    // the viewer is loaded outside this transaction, so compare by id rather than by object
+    static boolean votedBy(Set<AppUser> voters, AppUser viewer) {
+        return viewer != null && voters.stream().anyMatch(user -> user.getId().equals(viewer.getId()));
     }
 
     private List<ProjectSummary> summaries(Predicate<Project> keep) {
@@ -246,7 +407,8 @@ public class ProjectService {
                 .filter(keep)
                 .map(p -> new ProjectSummary(p.getId(), p.getTitle(), p.getDescription(), p.getStatus(),
                         CurrentUser.nameOf(p.getOwner()), p.getTags(), people(p.getMembers()), p.getCreatedAt(),
-                        p.getUpdatedAt(), counts.getOrDefault(p.getId(), 0L), p.getStartedOn(), p.isOpenForCollab()))
+                        p.getUpdatedAt(), counts.getOrDefault(p.getId(), 0L), p.getStartedOn(), p.isOpenForCollab(),
+                        p.getVoters().size()))
                 .toList();
     }
 
@@ -263,7 +425,7 @@ public class ProjectService {
         return found;
     }
 
-    private ProjectDetail detail(Project p) {
+    private ProjectDetail detail(Project p, AppUser viewer) {
         List<TimelineEntry> timeline = updates.findByProjectIdOrderByCreatedAtDescIdDesc(p.getId()).stream()
                 .map(ProjectService::entry)
                 .toList();
@@ -273,7 +435,8 @@ public class ProjectService {
         return new ProjectDetail(p.getId(), p.getTitle(), p.getDescription(), p.getStatus(),
                 CurrentUser.nameOf(p.getOwner()), p.getTags(), people(p.getMembers()), linkViews, p.getCreatedAt(),
                 p.getUpdatedAt(), timeline, p.getStartedOn(), view(p.getDetails()), p.isOpenForCollab(),
-                p.getCollabOpenedAt());
+                p.getCollabOpenedAt(), paperRefs(p.getPapers()), p.getVoters().size(), votedBy(p.getVoters(), viewer),
+                comments.countByProjectId(p.getId()));
     }
 
     /**

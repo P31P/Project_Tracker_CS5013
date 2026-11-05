@@ -17,6 +17,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -73,6 +74,18 @@ public class Project {
             joinColumns = @JoinColumn(name = "project_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id"))
     private Set<AppUser> members = new LinkedHashSet<>();
+
+    @ManyToMany
+    @JoinTable(name = "project_vote",
+            joinColumns = @JoinColumn(name = "project_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id"))
+    private Set<AppUser> voters = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(name = "project_paper",
+            joinColumns = @JoinColumn(name = "project_id"),
+            inverseJoinColumns = @JoinColumn(name = "paper_id"))
+    private Set<Paper> papers = new HashSet<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -200,6 +213,24 @@ public class Project {
      */
     public Set<AppUser> getMembers() {
         return members;
+    }
+
+    /**
+     * Returns the people who upvoted the project. Changes to the returned set are saved.
+     *
+     * @return the voters
+     */
+    public Set<AppUser> getVoters() {
+        return voters;
+    }
+
+    /**
+     * Returns the papers from the archive listed as references. Changes to the returned set are saved.
+     *
+     * @return the referenced papers
+     */
+    public Set<Paper> getPapers() {
+        return papers;
     }
 
     /**

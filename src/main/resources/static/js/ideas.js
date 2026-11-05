@@ -6,6 +6,7 @@ import { suggestButton } from './autofill.js';
 import { collabBadge, detailFields, detailSections, detailsFrom, hasDetails } from './details.js';
 import { icon } from './icons.js';
 import { markdown, markdownHint } from './markdown.js';
+import { linkForm, linkList, paperList, paperPicker } from './references.js';
 import { tagPicker } from './tags.js';
 import {
     avatar, button, el, emptyState, errorState, filterChips, input, relativeTime, segmented, skeleton, tagList, tagPill,
@@ -137,6 +138,7 @@ function ideaCard(idea, replace, pickTag, index, discussionOpen, toggleDiscussio
             idea.description && markdown(idea.description),
             hasDetails(idea.details) && el('details', 'idea-details',
                 el('summary', null, 'More about this idea'), ...detailSections(idea.details)),
+            references(idea),
             tagList(idea.tags, pickTag),
             el('p', 'card-meta card-byline', idea.authorName && avatar(idea.authorName),
                 [idea.authorName, relativeTime(idea.createdAt)].filter(Boolean).join(' · '),
@@ -149,7 +151,7 @@ function ideaCard(idea, replace, pickTag, index, discussionOpen, toggleDiscussio
 
 function discussionToggle(idea, open, toggleDiscussion) {
     const count = idea.commentCount;
-    const label = count === 0 ? 'Discuss' : count === 1 ? '1 comment' : count + ' comments';
+    const label = count === 0 ? 'Discuss and add references' : count === 1 ? '1 comment' : count + ' comments';
     const toggle = button(['message', label], 'link-button discussion-toggle', () => toggleDiscussion(idea.id));
     toggle.setAttribute('aria-expanded', String(open));
     return toggle;
@@ -185,7 +187,33 @@ function discussion(idea, replace, drafts) {
             post.disabled = false;
         }
     });
-    return el('section', 'discussion', thread, form);
+    const base = '/api/ideas/' + idea.id;
+    const editor = el('div', 'reference-editor',
+        el('h4', 'side-title', 'Links'), linkList(idea, base, replace), linkForm(base, replace),
+        el('h4', 'side-title', 'Papers'), paperList(idea, base, replace), paperPicker(idea, base, replace));
+    return el('section', 'discussion', thread, form, editor);
+}
+
+// a short line of the idea's references on the card; they are edited under the discussion
+function references(idea) {
+    const items = [
+        ...idea.links.filter(link => /^https?:\/\//i.test(link.url)).map(link => {
+            const anchor = el('a', null, link.label);
+            anchor.href = link.url;
+            anchor.target = '_blank';
+            anchor.rel = 'noopener noreferrer';
+            return anchor;
+        }),
+        ...idea.papers.map(paper => {
+            const anchor = el('a', null, paper.title);
+            anchor.href = '#papers/' + paper.id;
+            return anchor;
+        }),
+    ];
+    if (items.length === 0) {
+        return null;
+    }
+    return el('p', 'idea-references', icon('link', 14), ...items.flatMap((item, i) => i === 0 ? [item] : [' · ', item]));
 }
 
 function commentItem(comment) {

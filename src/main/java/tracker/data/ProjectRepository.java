@@ -13,7 +13,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
      *
      * @return all projects
      */
-    @EntityGraph(attributePaths = {"owner", "members"})
+    @EntityGraph(attributePaths = {"owner", "members", "voters"})
     List<Project> findAllByOrderByUpdatedAtDescIdDesc();
 
     /**

@@ -1,5 +1,6 @@
 package tracker.projects;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,16 +14,21 @@ import tracker.data.AppUserRepository;
 import tracker.data.Idea;
 import tracker.data.IdeaComment;
 import tracker.data.IdeaCommentRepository;
+import tracker.data.IdeaLink;
+import tracker.data.IdeaLinkRepository;
+import tracker.data.PaperRepository;
 import tracker.data.IdeaRepository;
 import tracker.data.ProjectRepository;
 import tracker.data.ProjectStatus;
 import tracker.projects.ProjectDtos.CommentView;
 import tracker.projects.ProjectDtos.IdeaRequest;
 import tracker.projects.ProjectDtos.IdeaView;
+import tracker.projects.ProjectDtos.LinkRequest;
+import tracker.projects.ProjectDtos.LinkView;
 import tracker.projects.ProjectDtos.ProjectDetail;
 import tracker.projects.ProjectDtos.ProjectRequest;
 
-/** Saves ideas, records votes and turns ideas into projects. */
+/** Saves ideas, records votes, keeps their references and turns ideas into projects. */
 @Service
 @Transactional
 public class IdeaService {
@@ -32,6 +38,8 @@ public class IdeaService {
     private final AppUserRepository users;
     private final ProjectService projectService;
     private final IdeaCommentRepository comments;
+    private final IdeaLinkRepository links;
+    private final PaperRepository papers;
 
     /**
      * Creates the service.
@@ -41,14 +49,19 @@ public class IdeaService {
      * @param users where users are stored
      * @param projectService creates the project when an idea is promoted
      * @param comments where the ideas' discussions are stored
+     * @param links where the ideas' web links are stored
+     * @param papers where the archive's papers are stored
      */
     public IdeaService(IdeaRepository ideas, ProjectRepository projects, AppUserRepository users,
-                       ProjectService projectService, IdeaCommentRepository comments) {
+                       ProjectService projectService, IdeaCommentRepository comments, IdeaLinkRepository links,
+                       PaperRepository papers) {
         this.ideas = ideas;
         this.projects = projects;
         this.users = users;
         this.projectService = projectService;
         this.comments = comments;
+        this.links = links;
+        this.papers = papers;
     }
 
     /**
@@ -63,8 +76,13 @@ public class IdeaService {
         for (Object[] row : comments.countPerIdea()) {
             commentCounts.put((Long) row[0], (Long) row[1]);
         }
+        Map<Long, List<LinkView>> linksByIdea = new HashMap<>();
+        for (IdeaLink link : links.findAllByOrderById()) {
+            linksByIdea.computeIfAbsent(link.getIdea().getId(), id -> new ArrayList<>()).add(linkView(link));
+        }
         return ideas.findAllByOrderByCreatedAtDescIdDesc().stream()
-                .map(idea -> view(idea, viewer, commentCounts.getOrDefault(idea.getId(), 0L)))
+                .map(idea -> view(idea, viewer, commentCounts.getOrDefault(idea.getId(), 0L),
+                        linksByIdea.getOrDefault(idea.getId(), List.of())))
                 .toList();
     }
 
@@ -84,7 +102,7 @@ public class IdeaService {
             idea.setDetails(ProjectService.details(request.details()));
         }
         idea.setOpenForCollab(Boolean.TRUE.equals(request.openForCollab()));
-        return view(ideas.save(idea), author, 0);
+        return view(ideas.save(idea), author, 0, List.of());
     }
 
     /**
@@ -100,7 +118,7 @@ public class IdeaService {
         if (voter != null && !votedBy(idea, voter)) {
             idea.getVoters().add(users.getReferenceById(voter.getId()));
         }
-        return view(idea, voter, comments.countByIdeaId(id));
+        return full(idea, voter);
     }
 
     /**
@@ -116,7 +134,7 @@ public class IdeaService {
         if (voter != null) {
             idea.getVoters().removeIf(user -> user.getId().equals(voter.getId()));
         }
-        return view(idea, voter, comments.countByIdeaId(id));
+        return full(idea, voter);
     }
 
     /**
@@ -170,6 +188,80 @@ public class IdeaService {
         return commentView(comments.save(comment));
     }
 
+    /**
+     * Adds a web link to an idea's references. Without a label, the site's name is used.
+     *
+     * @param id the idea's id
+     * @param request the link
+     * @param viewer the signed-in user
+     * @return the idea with the new link
+     * @throws ResponseStatusException {@code 404} if there is no such idea, or {@code 400} if the address is
+     *         missing or isn't an http(s) web address
+     */
+    public IdeaView addLink(Long id, LinkRequest request, AppUser viewer) {
+        Idea idea = find(id);
+        LinkView link = ProjectService.checkedLink(request);
+        links.save(new IdeaLink(idea, link.label(), link.url()));
+        return full(idea, viewer);
+    }
+
+    /**
+     * Removes a web link from an idea.
+     *
+     * @param id the idea's id
+     * @param linkId the link's id
+     * @param viewer the signed-in user
+     * @return the idea without the link
+     * @throws ResponseStatusException {@code 404} if there is no such idea or no such link on it
+     */
+    public IdeaView removeLink(Long id, Long linkId, AppUser viewer) {
+        Idea idea = find(id);
+        IdeaLink link = links.findByIdAndIdeaId(linkId, id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No link with id " + linkId));
+        links.delete(link);
+        return full(idea, viewer);
+    }
+
+    /**
+     * Lists a paper from the archive as one of the idea's references. Adding it twice changes nothing.
+     *
+     * @param id the idea's id
+     * @param paperId the paper's id
+     * @param viewer the signed-in user
+     * @return the idea with the paper
+     * @throws ResponseStatusException {@code 404} if there is no such idea, {@code 400} if there is no such paper
+     */
+    public IdeaView addPaper(Long id, Long paperId, AppUser viewer) {
+        Idea idea = find(id);
+        idea.getPapers().add(ProjectService.paper(papers, paperId));
+        return full(idea, viewer);
+    }
+
+    /**
+     * Takes a paper off the idea's references.
+     *
+     * @param id the idea's id
+     * @param paperId the paper's id
+     * @param viewer the signed-in user
+     * @return the idea without the paper
+     * @throws ResponseStatusException {@code 404} if there is no such idea
+     */
+    public IdeaView removePaper(Long id, Long paperId, AppUser viewer) {
+        Idea idea = find(id);
+        idea.getPapers().removeIf(paper -> paper.getId().equals(paperId));
+        return full(idea, viewer);
+    }
+
+    // one idea with its comment count and links, after a change to it
+    private IdeaView full(Idea idea, AppUser viewer) {
+        return view(idea, viewer, comments.countByIdeaId(idea.getId()),
+                links.findByIdeaIdOrderById(idea.getId()).stream().map(IdeaService::linkView).toList());
+    }
+
+    private static LinkView linkView(IdeaLink link) {
+        return new LinkView(link.getId(), link.getLabel(), link.getUrl());
+    }
+
     private Idea find(Long id) {
         return ideas.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No idea with id " + id));
@@ -180,13 +272,13 @@ public class IdeaService {
         return viewer != null && idea.getVoters().stream().anyMatch(user -> user.getId().equals(viewer.getId()));
     }
 
-    private static IdeaView view(Idea idea, AppUser viewer, long commentCount) {
+    private static IdeaView view(Idea idea, AppUser viewer, long commentCount, List<LinkView> ideaLinks) {
         return new IdeaView(idea.getId(), idea.getTitle(), idea.getDescription(), CurrentUser.nameOf(idea.getAuthor()),
                 idea.getTags(), idea.getCreatedAt(),
                 idea.getProject() == null ? null : idea.getProject().getId(),
                 idea.getProject() == null ? null : idea.getProject().getTitle(),
                 idea.getVoters().size(), votedBy(idea, viewer), commentCount, ProjectService.view(idea.getDetails()),
-                idea.isOpenForCollab());
+                idea.isOpenForCollab(), ideaLinks, ProjectService.paperRefs(idea.getPapers()));
     }
 
     private static CommentView commentView(IdeaComment comment) {

@@ -59,6 +59,12 @@ public class Idea {
             inverseJoinColumns = @JoinColumn(name = "user_id"))
     private Set<AppUser> voters = new HashSet<>();
 
+    @ManyToMany
+    @JoinTable(name = "idea_paper",
+            joinColumns = @JoinColumn(name = "idea_id"),
+            inverseJoinColumns = @JoinColumn(name = "paper_id"))
+    private Set<Paper> papers = new HashSet<>();
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -196,6 +202,15 @@ public class Idea {
      */
     public Set<AppUser> getVoters() {
         return voters;
+    }
+
+    /**
+     * Returns the papers from the archive listed as references. Changes to the returned set are saved.
+     *
+     * @return the referenced papers
+     */
+    public Set<Paper> getPapers() {
+        return papers;
     }
 
     /**
