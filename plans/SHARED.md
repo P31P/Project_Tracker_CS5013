@@ -9,7 +9,7 @@ What both of you depend on. Individual tasks are in [PRIYAL.md](PRIYAL.md) and [
 | 0: Foundations | Skeleton builds, schema exists, allowlisted members can sign in, Slack app receives messages |
 | 1: Core flows | A link posted in Slack shows up in the Papers tab; a member can create a project and post updates |
 | 2: Complete features | Full paper resolution, search, ideas, auto-fill |
-| 3: Stakeholder feedback | Projects and ideas have the lab's fields and built-in tags; each member has a profile, and Home shows new work that matches their interests; a People tab; a Search tab with filters |
+| 3: Stakeholder feedback | Projects and ideas have the lab's fields and built-in tags; each member has a profile, and Home shows new work that matches their interests; a People tab; a Search tab with filters; papers can be upvoted and marked as read |
 | 4: Deploy | Runs on the lab's machine, installable from the README |
 
 ## Stakeholder feedback (round 1)
@@ -19,10 +19,11 @@ The lab's requests after the Phase 2 demo, and where each one is planned:
 | # | Request | Owner | Tasks |
 |---|---|---|---|
 | 1 | More fields when adding a project or idea (status, date, core question, motivation, approach, data and resources, challenges, references, collaboration status, built-in and custom tags), plus archive papers as references, and upvotes and discussion on projects. Suggest (AI) fills most of them | Sujal | [SUJAL.md](SUJAL.md), Phase 3 |
-| 2 | A profile for each member (intro, study background, fields of interest), shown on their Home page with their projects and ideas; new work tagged with their interests appears in their recent activity | Sujal | [SUJAL.md](SUJAL.md), Phase 3 |
+| 2 | A profile for each member (intro, study background, fields of interest), shown on their Home page with their projects and ideas; new work tagged with their interests appears in their recent activity | Priyal | [PRIYAL.md](PRIYAL.md), Phase 3 |
 | 3 | A People tab: name, background and fields of interest of every lab member | Priyal | [PRIYAL.md](PRIYAL.md), Phase 3 |
 | 4 | Search as its own tab, with filters for date, tags, type and person | Priyal | [PRIYAL.md](PRIYAL.md), Phase 3 |
 | 5 | A Lab Manager role: a lab member who can give and remove access, so the lab doesn't depend on us (or on the busy admin) after handover | Sujal | [SUJAL.md](SUJAL.md), Phase 3 |
+| 6 | Upvote papers, and mark papers as read (each person's own list) | Priyal | [PRIYAL.md](PRIYAL.md), Phase 3 |
 
 Decisions that cut across both plans:
 
@@ -40,6 +41,7 @@ Decisions that cut across both plans:
   - **Member:** their own dashboard.
   - Nobody can remove their own access or change their own role, and the last admin can't be removed or demoted, so the lab can't lock itself out.
 - Paper tags: papers from Slack have no tags. Papers get a `tags` column so the tag filter and interest matches cover them too. Tags are set in the paper's Details page, and the title is also matched against interests so untagged papers still show up.
+- **Papers aren't linked to app users.** People often use a different name or email on Slack than in the app, so matching them would be unreliable. Papers keep showing the Slack poster's name, and the search person filter covers projects and ideas only.
 
 Answered by the lab:
 
@@ -69,11 +71,10 @@ Still open (the plan uses the default):
 | H8 | Sujal → Priyal | `HostedLlmClient` | running rung 3 for real |
 | H9 | Sujal → Priyal | `scripts/seed-mock-data.sql` | `SearchServiceTest` |
 | H10 | Priyal → Sujal | Search migration (touches `project` and `idea`) | search |
-| H11 | Sujal → Priyal | Tag catalog: `tag` table, `GET /api/tags`, and the `tagPicker` widget in `static/js/tags.js` | paper tags, the search tag filter, the People interest filter |
-| H12 | Sujal → Priyal | New project and idea text columns (core question, motivation, approach, resources, challenges) | rebuilding the `search` columns |
-| H13 | Sujal → Priyal | Profile and role columns on `app_user` and the `ProfileView` record | People tab |
-| H14 | Priyal → Sujal | `paper.tags` column and tag editing on the paper Details page | interest matches for papers on Home |
-| H15 | Sujal → Priyal | `project_paper` / `idea_paper` tables | "Used in" list on the paper Details page |
+| H11 | Sujal → Priyal | Tag catalog: `tag` table, `GET /api/tags`, and the `tagPicker` widget in `static/js/tags.js` | paper tags, profile interests, the search tag filter, the People interest filter |
+| H12 | Sujal → Priyal | New project and idea columns (the five text fields, `open_for_collab`, `collab_opened_at`) | rebuilding the `search` columns; open projects in "For you" |
+| H13 | Sujal → Priyal | `app_user.role` and `role` in `GET /api/me` | the admin Home; role labels in the People tab |
+| H14 | Sujal → Priyal | `project_paper` / `idea_paper` tables | "Used in" list on the paper Details page |
 
 ## Schema
 
@@ -109,10 +110,12 @@ Migration numbers are taken at merge time (next after the highest on `main`, V12
 | `project` (added): started_on DATE, core_question, motivation, approach, resources, challenges (TEXT), open_for_collab BOOLEAN default false, collab_opened_at TIMESTAMPTZ | Project fields (Sujal, H12) |
 | `idea` (added): core_question, motivation, approach, resources, challenges (TEXT), open_for_collab BOOLEAN default false | Idea fields (Sujal, H12) |
 | `idea_link`: idea_id, label, url (http(s) only), created_at, like `project_link` | Idea references (Sujal) |
-| `project_paper`, `idea_paper`: project_id / idea_id, paper_id (primary key on both), added_by, created_at | Archive papers as references (Sujal, H15) |
+| `project_paper`, `idea_paper`: project_id / idea_id, paper_id (primary key on both), added_by, created_at | Archive papers as references (Sujal, H14) |
 | `project_vote`: project_id, user_id (primary key on both), created_at, like `idea_vote` | Project upvotes (Sujal) |
 | `project_comment`: project_id, author_id, body (not blank), created_at, like `idea_comment` | Project discussion (Sujal) |
-| `app_user` (added): bio, background (TEXT), interests `text[]` default `'{}'`, role (`MEMBER`/`LAB_MANAGER`/`ADMIN`, default `MEMBER`); a migration allowlists the lab's admin and first Lab Manager | Profiles and roles (Sujal, H13) |
-| `paper` (added): tags `text[]` default `'{}'` | Paper tags (Priyal, H14) |
-| `slack_message` (added): poster_id → `app_user`, set when the Slack poster's email matches a user | Person filter for papers (Priyal) |
-| `project`, `idea`, `paper` (changed): `search` dropped and re-added to include the new text fields and paper tags; GIN indexes recreated; GIN index on each `tags` column | Search filters (Priyal, after H12 and H14) |
+| `app_user` (added): bio, background (TEXT), interests `text[]` default `'{}'` | Profiles (Priyal) |
+| `app_user` (added): role (`MEMBER`/`LAB_MANAGER`/`ADMIN`, default `MEMBER`); a migration allowlists the lab's admin and first Lab Manager | Roles and access (Sujal, H13) |
+| `paper` (added): tags `text[]` default `'{}'` | Paper tags (Priyal) |
+| `paper_vote`: paper_id, user_id (primary key on both), created_at, like `idea_vote` | Paper upvotes (Priyal) |
+| `paper_read`: paper_id, user_id (primary key on both), read_at; private to each person | Paper read marks (Priyal) |
+| `project`, `idea`, `paper` (changed): `search` dropped and re-added to include the new text fields and paper tags; GIN indexes recreated; GIN index on each `tags` column | Search filters (Priyal, after H12) |

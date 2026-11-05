@@ -24,8 +24,8 @@ Context: `Proposal_Doc.pdf`, `Design_Doc.pdf`. Plans: `plans/SHARED.md`, `plans/
 
 | Module | Owner |
 |---|---|
-| A: Slack ingestion, B: Paper archive, C: Search, People & paper views | Priyal Patel (`P31P`) |
-| D: Auth, profiles & data layer, E: Projects & ideas, F: AI auto-fill | Sujal Jayant Kumar (`SujalKumar06`) |
+| A: Slack ingestion, B: Paper archive, C: Search, People, profiles & paper views | Priyal Patel (`P31P`) |
+| D: Auth, roles & data layer, E: Projects & ideas, F: AI auto-fill | Sujal Jayant Kumar (`SujalKumar06`) |
 | G: Deployment & handoff | Both |
 
 Shared files where changes need care: `pom.xml`, `application.yml`.

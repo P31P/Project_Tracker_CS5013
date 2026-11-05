@@ -13,8 +13,7 @@ src/main/java/tracker/
     auth/       SecurityConfig, AllowlistOidcUserService, MeController, AccessController, AccessService
     data/       entity/, enums/, repository/
     projects/   ProjectController, IdeaController, ProjectService, IdeaService, dto/, TagController
-    profile/    ProfileController, ProfileService, ProfileView
-    overview/   OverviewController, OverviewService
+    overview/   OverviewController, OverviewService (Priyal adds the profile Home and "For you" in Phase 3)
     llm/        LlmClient, HostedLlmClient, LocalLlmClient, DisabledLlmClient
     autofill/   AutoFillController, AutoFillService, AutoFillSuggestion
 src/main/resources/
@@ -79,7 +78,7 @@ See [SHARED.md](SHARED.md).
 
 ### Phase 3: Stakeholder feedback (requests 1 and 2 in [SHARED.md](SHARED.md))
 
-Do the tag catalog and the new columns first: Priyal's search filters and People tab wait on H11–H13.
+Do the tag catalog and the new columns first: Priyal's search filters, profiles and People tab wait on H11–H13.
 
 **Tag catalog (→ H11)**
 
@@ -96,7 +95,7 @@ Do the tag catalog and the new columns first: Priyal's search filters and People
 - [ ] Status labels read Planning / Ongoing / On hold / Completed (labels only, no migration; confirmed by the lab)
 - [ ] New project dialog: **Basics** (title, description, status, start date, collaboration "Open for collaboration / Closed or solo", tags with `tagPicker`, members) and a **Detailed info** expander (core question, motivation, proposed approach, data and resources needed, challenges). Long fields are Markdown
 - [ ] **References** in the dialog and on the project page: external links (existing `project_link`) and papers from our archive. The paper picker uses `GET /api/search?type=PAPER&q=` (Priyal's endpoint, no new API)
-- [ ] Migration: `project_paper`; `POST /api/projects/{id}/papers` (`paperId`), `DELETE /api/projects/{id}/papers/{paperId}` (→ H15)
+- [ ] Migration: `project_paper`; `POST /api/projects/{id}/papers` (`paperId`), `DELETE /api/projects/{id}/papers/{paperId}` (→ H14)
 - [ ] Project page: one section per filled detail field (empty ones hidden, an "Add" link for the owner and members), references, then timeline
 - [ ] Upvotes: `project_vote` migration, `PUT`/`DELETE /api/projects/{id}/vote`, count and "voted" flag in the summary and detail
 - [ ] Discussion: `project_comment` migration, `GET`/`POST /api/projects/{id}/comments`, a Discussion section on the project page (same component as ideas)
@@ -120,26 +119,12 @@ Do the tag catalog and the new columns first: Priyal's search filters and People
 - [ ] `AutoFillServiceTest`: a note that only gives a title fills no detail fields; a full note fills all five; tags from the catalog come back with the catalog spelling
 - [ ] Time a full suggestion on `llama3.2:3b`; if it is much slower than now, ask for the detail fields only when "Detailed info" is open
 
-**Profiles and the personal Home (→ H13)**
-
-- [ ] Migration: `app_user` gets `bio`, `background`, `interests text[]` and `role` (`MEMBER`/`LAB_MANAGER`/`ADMIN`, default `MEMBER`); a second migration allowlists the lab's admin and first Lab Manager and sets their roles (emails from the lab, never guessed)
-- [ ] `ProfileView` record (id, name, email, bio, background, interests, role) for Priyal's People tab
-- [ ] `GET /api/me` returns the profile and role; `PATCH /api/me` updates bio, background and interests (interests tidied like tags). `role` can't be changed here, only on the Manage access page
-- [ ] Home becomes the user's own page: a profile card at the top (intro, background, interests, "Edit profile" dialog with `tagPicker`), then my projects, my ideas, and recent activity. A first-time user with an empty profile sees a prompt to fill it in
-- [ ] `GET /api/overview` adds `myIdeas` and `forYou`: in the last 30 days, by someone else, with a tag in the user's interests:
-  - new ideas
-  - projects opened for collaboration (by `collab_opened_at`)
-  - papers whose tags match, or whose title matches an interest as a phrase (needs H14)
-
-  Each item says which interest matched ("Matches #genomics"). Recent activity gets "For you / Everything" chips
-- [ ] Admin Home: the lab-wide numbers and everything in recent activity, above the admin's own profile; members and Lab Managers don't see the numbers block
-- [ ] `ProfileApiTest`: update and read back; interests tidied; `role` ignored in a `PATCH`
-- [ ] `OverviewApiTest`: an idea tagged with my interest shows in `forYou`; my own idea doesn't; a project only shows once it is open for collaboration; an item older than 30 days doesn't
-
 **Lab Manager: managing access (request 5)**
 
-Today access is a migration, and `requireAllowlisted` checks it only at sign-in. After handover the Lab Manager does it from the app.
+Today access is a migration, and `requireAllowlisted` checks it only at sign-in. After handover the Lab Manager does it from the app. Profiles and the personal Home are Priyal's (request 2); the `role` column is yours.
 
+- [ ] Migration: `app_user.role` (`MEMBER`/`LAB_MANAGER`/`ADMIN`, default `MEMBER`); a second migration allowlists the lab's admin and first Lab Manager and sets their roles (emails from the lab, never guessed) (→ H13)
+- [ ] `GET /api/me` returns `role`, so the frontend knows whether to show Manage access and the admin Home
 - [ ] A helper beside `CurrentUser` answers "can manage access" (`LAB_MANAGER` or `ADMIN`); the access endpoints give 403 "Only a Lab Manager can manage access" to anyone else
 - [ ] `tracker.auth.AccessController` + `AccessService`:
   - `GET /api/access`: everyone with an `app_user` row (name, email, role, whether they have access)
@@ -176,5 +161,4 @@ Today access is a migration, and `requireAllowlisted` checks it only at sign-in.
 | E | Pages load in under 0.5 s on the seed data; the timeline shows updates in order; ideas can be promoted |
 | F | Messy inputs give valid suggestions or "couldn't suggest"; with the LLM off every form still works; nothing is saved without confirmation |
 | Feedback 1 | A project or idea saves with only a title or with every field; built-in and custom tags both work; links and archive papers can be added and removed; projects can be upvoted and discussed; Suggest fills the detail fields and prefers built-in tags |
-| Feedback 2 | A member can edit their intro, background and interests; Home shows their projects and ideas; a new idea, open project or paper tagged with one of their interests appears under "For you"; admins see the lab-wide numbers |
 | Feedback 5 | A Lab Manager adds a member by email from the app and that person can sign in; removing someone cuts them off on their next request; members can't reach Manage access; nobody can lock the lab out |
