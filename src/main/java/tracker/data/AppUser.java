@@ -2,6 +2,8 @@ package tracker.data;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -29,6 +31,10 @@ public class AppUser {
 
     @Column(nullable = false)
     private boolean allowlisted;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.MEMBER;
 
     private String bio;
 
@@ -109,6 +115,24 @@ public class AppUser {
      */
     public OffsetDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    /**
+     * Returns what the person may do.
+     *
+     * @return their role
+     */
+    public Role getRole() {
+        return role;
+    }
+
+    /**
+     * Changes what the person may do.
+     *
+     * @param role the new role
+     */
+    public void setRole(Role role) {
+        this.role = role;
     }
 
     /**
