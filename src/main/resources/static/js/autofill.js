@@ -1,4 +1,4 @@
-// Auto-fill: a "Suggest" button that turns a rough note into a title, description and tags.
+// Auto-fill: a "Suggest" button that turns a rough note into a title, description, tags and the detailed info.
 // It only fills the form; nothing is saved until the person checks it and saves.
 
 import { getJson, sendJson } from './api.js';
@@ -16,7 +16,8 @@ function autoFillEnabled() {
 
 /**
  * A Suggest button, hidden unless auto-fill is on. readNote() returns what the person has written;
- * fill(suggestion) puts { title, description, tags } into the form.
+ * fill(suggestion) puts { title, description, tags, coreQuestion, motivation, approach, resources, challenges }
+ * into the form.
  */
 export function suggestButton(readNote, fill) {
     const suggest = button(['sparkles', 'Suggest'], 'button button-secondary button-small', async () => {
@@ -38,7 +39,7 @@ export function suggestButton(readNote, fill) {
             label.textContent = 'Suggest';
         }
     });
-    suggest.title = 'Fill in a title, description and tags from what you wrote';
+    suggest.title = 'Fill in a title, description, tags and the detailed info from what you wrote';
     suggest.hidden = true;
     autoFillEnabled().then(on => {
         suggest.hidden = !on;

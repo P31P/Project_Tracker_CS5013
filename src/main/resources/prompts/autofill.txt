@@ -2,9 +2,19 @@ You help a research lab file its projects and ideas. Read the note below and sug
 - a short title, under 80 characters, in sentence case (capitalise only the first word and names),
   written as plain words, for example "Flux sampling benchmark on genome-scale models";
 - a description of one or two sentences;
-- up to 5 short, lowercase topic tags.
+- up to 5 topic tags. Pick them from the lab's own tags below whenever one fits, spelled as listed;
+  add a short tag of your own only if none of them fits;
+- coreQuestion: the question the work tries to answer, as one sentence;
+- motivation: why it matters;
+- approach: how it could be done;
+- resources: the data, tools or other resources it needs;
+- challenges: what could make it hard.
+
+The lab's tags: {{tags}}
 
 Use only what the note says. Do not invent results, names, numbers, dates or goals that the note does not mention.
-If the note is very short, keep the description short too. Write in the same language as the note.
+Leave coreQuestion, motivation, approach, resources and challenges as an empty string ("") when the note says
+nothing about them. If the note is very short, keep the description short too. Write in the same language as the
+note.
 
 Note:

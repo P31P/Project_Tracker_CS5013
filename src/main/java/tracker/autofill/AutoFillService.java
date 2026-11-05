@@ -7,10 +7,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.core.JacksonException;
@@ -21,7 +24,7 @@ import tracker.llm.LlmException;
 import tracker.projects.ProjectService;
 
 /**
- * Turns a rough note into a suggested title, description and tags with the language model. The model's answer is
+ * Turns a rough note into a suggested title, description, tags and longer write-up with the language model. The model's answer is
  * checked, not trusted: anything unusable gives "couldn't suggest", never an error page, and nothing is saved.
  */
 @Service
@@ -31,29 +34,53 @@ public class AutoFillService {
     static final int MAX_NOTE_LENGTH = 4000;
     static final int MAX_TITLE_LENGTH = 120;
     static final int MAX_TAGS = 5;
+    /** Longest suggested part of the write-up; a person can always write more themselves. */
+    static final int MAX_PART_LENGTH = 1000;
+    static final List<String> PARTS = List.of("coreQuestion", "motivation", "approach", "resources", "challenges");
 
+    private static final Map<String, Object> STRING = Map.of("type", "string");
     private static final Map<String, Object> SCHEMA = Map.of(
             "type", "object",
             "properties", Map.of(
-                    "title", Map.of("type", "string"),
-                    "description", Map.of("type", "string"),
-                    "tags", Map.of("type", "array", "items", Map.of("type", "string"))),
-            "required", List.of("title", "description", "tags"),
+                    "title", STRING,
+                    "description", STRING,
+                    "tags", Map.of("type", "array", "items", STRING),
+                    "coreQuestion", STRING,
+                    "motivation", STRING,
+                    "approach", STRING,
+                    "resources", STRING,
+                    "challenges", STRING),
+            "required", List.of("title", "description", "tags", "coreQuestion", "motivation", "approach", "resources",
+                    "challenges"),
             "additionalProperties", false);
 
     private static final Logger log = LoggerFactory.getLogger(AutoFillService.class);
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
     private final LlmClient llm;
+    private final Supplier<List<String>> builtInTags;
     private final String prompt;
+
+    /**
+     * Creates the service, with the lab's built-in tags read from the {@code tag} table on each suggestion.
+     *
+     * @param llm asks the language model
+     * @param jdbc reads the built-in tags
+     */
+    @Autowired
+    public AutoFillService(LlmClient llm, JdbcClient jdbc) {
+        this(llm, () -> jdbc.sql("SELECT label FROM tag ORDER BY category, position").query(String.class).list());
+    }
 
     /**
      * Creates the service and reads the prompt from {@code prompts/autofill.txt}.
      *
      * @param llm asks the language model
+     * @param builtInTags the lab's tags to offer the model, as shown to people
      */
-    public AutoFillService(LlmClient llm) {
+    AutoFillService(LlmClient llm, Supplier<List<String>> builtInTags) {
         this.llm = llm;
+        this.builtInTags = builtInTags;
         try (InputStream in = new ClassPathResource("prompts/autofill.txt").getInputStream()) {
             this.prompt = new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
@@ -71,7 +98,7 @@ public class AutoFillService {
     }
 
     /**
-     * Suggests a title, description and tags for a note.
+     * Suggests a title, description, tags and write-up for a note.
      *
      * @param note what the person wrote, however rough
      * @return the suggestion, for the person to check before saving
@@ -91,7 +118,8 @@ public class AutoFillService {
         }
         String answer;
         try {
-            answer = llm.completeJson(prompt + note.strip(), SCHEMA);
+            String tags = String.join(", ", builtInTags.get());
+            answer = llm.completeJson(prompt.replace("{{tags}}", tags) + note.strip(), SCHEMA);
         } catch (LlmException e) {
             log.warn("Auto-fill failed: {}", e.getMessage());
             throw couldNotSuggest();
@@ -103,7 +131,7 @@ public class AutoFillService {
      * Reads the model's answer into a suggestion, tidying it on the way. Fields of the wrong type count as missing,
      * and fields the schema doesn't name are ignored.
      *
-     * @param answer the model's answer, expected to be JSON with a title, description and tags
+     * @param answer the model's answer, expected to be JSON with a title, description, tags and write-up
      * @return the tidied suggestion
      * @throws ResponseStatusException {@code 503} if the answer isn't JSON or has no title
      */
@@ -128,8 +156,16 @@ public class AutoFillService {
             }
         }
         List<String> tidied = ProjectService.tags(tags);
+        List<String> parts = PARTS.stream().map(part -> part(node.path(part))).toList();
         return new AutoFillSuggestion(title, text(node.path("description")),
-                tidied.subList(0, Math.min(MAX_TAGS, tidied.size())));
+                tidied.subList(0, Math.min(MAX_TAGS, tidied.size())), parts.get(0), parts.get(1), parts.get(2),
+                parts.get(3), parts.get(4));
+    }
+
+    // one part of the write-up, cut to a sensible length; null if the model left it out or empty
+    private static String part(JsonNode field) {
+        String text = text(field);
+        return text == null || text.length() <= MAX_PART_LENGTH ? text : text.substring(0, MAX_PART_LENGTH).strip();
     }
 
     // a string field's trimmed text, or null if it is missing, not a string, or blank
