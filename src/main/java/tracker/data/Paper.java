@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -42,6 +43,10 @@ public class Paper {
     private LocalDate publishedOn;
 
     private String doi;
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(columnDefinition = "text[]", nullable = false)
+    private List<String> tags = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     private PaperSource source;
@@ -139,6 +144,24 @@ public class Paper {
      */
     public String getDoi() {
         return doi;
+    }
+
+    /**
+     * Returns the paper's tags, lowercased and without duplicates.
+     *
+     * @return the paper's tags, lowercased and without duplicates
+     */
+    public List<String> getTags() {
+        return tags;
+    }
+
+    /**
+     * Replaces the tags with a copy of the given list.
+     *
+     * @param tags the new tags, already tidied by the caller
+     */
+    public void setTags(List<String> tags) {
+        this.tags = new ArrayList<>(tags);
     }
 
     /**
