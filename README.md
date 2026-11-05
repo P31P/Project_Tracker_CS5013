@@ -29,6 +29,7 @@ Signed-out API calls get `401`; pages redirect to the sign-in page (`/login.html
 - `GET /api/people`: everyone who can sign in (to add as project members)
 - `GET /api/people/directory`: everyone who can sign in, with background, interests and how many projects and ideas they have; `GET /api/people/{id}`: one person's profile, projects and ideas (`404` if they can't sign in)
 - `GET /api/projects`, `POST /api/projects` (`title` required; `description`, `status`, `tags`, `memberIds` optional), `GET`/`PATCH /api/projects/{id}`, `POST /api/projects/{id}/updates`, `POST /api/projects/{id}/links` (`url` must be http(s); `label` optional), `DELETE /api/projects/{id}/links/{linkId}`
+- `GET /api/tags`: the lab's built-in tags in their groups (Broad direction, Methodology, Other) and up to 50 custom tags already in use, for the tag picker
 - `GET /api/autofill`: whether auto-fill is on; `POST /api/autofill` (`note` required): a suggested `title`, `description` and `tags`, never saved
 - `GET /api/ideas`, `POST /api/ideas` (`title` required; `description`, `tags` optional), `PUT`/`DELETE /api/ideas/{id}/vote`, `GET`/`POST /api/ideas/{id}/comments` (`body` required), `POST /api/ideas/{id}/promote` (starts a project in Planning with the idea's tags)
 

@@ -2,12 +2,13 @@
 // when it's ready.
 
 import { getJson, sendJson } from './api.js';
-import { mergeSuggestedTags, suggestButton } from './autofill.js';
+import { suggestButton } from './autofill.js';
 import { icon } from './icons.js';
 import { markdown, markdownHint } from './markdown.js';
+import { tagPicker } from './tags.js';
 import {
-    avatar, button, el, emptyState, errorState, filterChips, input, relativeTime, segmented, skeleton, splitTags,
-    tagList, tagPill, textarea, toast,
+    avatar, button, el, emptyState, errorState, filterChips, input, relativeTime, segmented, skeleton, tagList, tagPill,
+    textarea, toast,
 } from './ui.js';
 
 export async function renderIdeas(container) {
@@ -22,8 +23,8 @@ function composer(onSaved) {
     title.setAttribute('aria-label', 'Idea');
     const description = textarea('description', { placeholder: 'Any context, links or first thoughts (optional)' });
     description.setAttribute('aria-label', 'Details');
-    const tags = input('tags', { placeholder: 'Tags, separated by commas (optional)' });
-    tags.setAttribute('aria-label', 'Tags');
+    // replaced with an empty picker after each save
+    let tags = tagPicker('tags');
     const more = el('details', 'more', el('summary', null, 'Add details'),
         el('div', 'more-fields', description, markdownHint(), tags));
     const save = el('button', 'button', icon('bulb', 16), 'Save idea');
@@ -31,7 +32,7 @@ function composer(onSaved) {
     const suggest = suggestButton(() => title.value + '\n' + description.value, suggestion => {
         title.value = suggestion.title;
         description.value = suggestion.description || '';
-        tags.value = mergeSuggestedTags(tags, suggestion.tags);
+        tags.suggest(suggestion.tags);
         more.open = true;
     });
     const form = el('form', 'card composer composer-idea', title, more, el('div', 'composer-actions', suggest, save));
@@ -40,8 +41,11 @@ function composer(onSaved) {
         save.disabled = true;
         try {
             await sendJson('POST', '/api/ideas',
-                { title: title.value, description: description.value, tags: splitTags(tags.value) });
+                { title: title.value, description: description.value, tags: tags.tags() });
             form.reset();
+            const fresh = tagPicker('tags');
+            tags.replaceWith(fresh);
+            tags = fresh;
             more.open = false;
             toast('Idea saved');
             await onSaved();
