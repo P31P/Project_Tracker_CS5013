@@ -3,6 +3,7 @@ package tracker.profile;
 import java.util.List;
 import tracker.auth.CurrentUser;
 import tracker.data.AppUser;
+import tracker.data.Role;
 
 /**
  * A lab member's profile, as shown on their Home page and in the People tab.
@@ -13,8 +14,10 @@ import tracker.data.AppUser;
  * @param bio their introduction in Markdown, or {@code null}
  * @param background their study background, or {@code null}
  * @param interests their fields of interest, as tags
+ * @param role what they may do, so others know whom to ask for access
  */
-public record ProfileView(Long id, String name, String email, String bio, String background, List<String> interests) {
+public record ProfileView(Long id, String name, String email, String bio, String background, List<String> interests,
+                          Role role) {
 
     /**
      * Builds the profile of a user.
@@ -24,6 +27,6 @@ public record ProfileView(Long id, String name, String email, String bio, String
      */
     public static ProfileView of(AppUser user) {
         return new ProfileView(user.getId(), CurrentUser.nameOf(user), user.getEmail(), user.getBio(),
-                user.getBackground(), user.getInterests());
+                user.getBackground(), user.getInterests(), user.getRole());
     }
 }

@@ -100,6 +100,25 @@ class ForYouApiTest extends PostgresTestBase {
                 .andExpect(jsonPath("$.myIdeas[0].voteCount").value(0));
     }
 
+    @Test
+    void aProjectOpenedForCollaborationShowsUpUnlessItIsMine() throws Exception {
+        interestedIn("genomics");
+        project("Open genomics project", sujal, true);
+        project("Closed genomics project", sujal, false);
+        project("My open genomics project", priyal, true);
+
+        overview()
+                .andExpect(jsonPath("$.forYou[*].target", contains("Open genomics project")))
+                .andExpect(jsonPath("$.forYou[0].kind").value("PROJECT"))
+                .andExpect(jsonPath("$.forYou[0].action").value("opened a project for collaboration"));
+    }
+
+    private void project(String title, long ownerId, boolean open) {
+        jdbc.sql("INSERT INTO project (title, tags, owner_id, open_for_collab, collab_opened_at) "
+                        + "VALUES (:title, '{genomics}', :owner, :open, CASE WHEN :open THEN now() END)")
+                .param("title", title).param("owner", ownerId).param("open", open).update();
+    }
+
     private void interestedIn(String... interests) throws Exception {
         mvc.perform(patch("/api/profile").with(PRIYAL).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"interests\": [\"" + String.join("\", \"", interests) + "\"]}"));

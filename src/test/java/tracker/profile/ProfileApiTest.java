@@ -46,6 +46,11 @@ class ProfileApiTest extends PostgresTestBase {
     }
 
     @Test
+    void theProfileSaysWhoManagesAccess() throws Exception {
+        mvc.perform(get("/api/profile").with(PRIYAL)).andExpect(jsonPath("$.role").value("LAB_MANAGER"));
+    }
+
+    @Test
     void savingReplacesEveryFieldAndBlanksBecomeEmpty() throws Exception {
         save("{\"bio\": \"Hello\", \"background\": \"PhD\", \"interests\": [\"genomics\"]}");
 

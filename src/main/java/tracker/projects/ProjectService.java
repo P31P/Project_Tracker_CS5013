@@ -436,7 +436,7 @@ public class ProjectService {
                 CurrentUser.nameOf(p.getOwner()), p.getTags(), people(p.getMembers()), linkViews, p.getCreatedAt(),
                 p.getUpdatedAt(), timeline, p.getStartedOn(), view(p.getDetails()), p.isOpenForCollab(),
                 p.getCollabOpenedAt(), paperRefs(p.getPapers()), p.getVoters().size(), votedBy(p.getVoters(), viewer),
-                comments.countByProjectId(p.getId()));
+                comments.countByProjectId(p.getId()), p.getOwner() == null ? null : p.getOwner().getId());
     }
 
     /**

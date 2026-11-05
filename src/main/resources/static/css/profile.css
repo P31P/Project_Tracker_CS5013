@@ -104,6 +104,22 @@
     min-width: 0;
 }
 
+.role-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.05rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 500;
+    vertical-align: middle;
+}
+
+.person-name-row {
+    margin: 0;
+}
+
 .person-name {
     font-weight: 600;
     color: inherit;
