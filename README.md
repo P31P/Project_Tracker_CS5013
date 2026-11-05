@@ -42,6 +42,7 @@ Slack ingestion (Socket Mode): set `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, `S
 ## Docs
 - [PLAN.md](PLAN.md): where the plans are
 - [plans/](plans/): shared phases/handoffs/schema and per-person plans
+- [docs/ADMIN.md](docs/ADMIN.md): Slack app setup from scratch, adding a channel, fixing a paper, allowlisting people; `deploy/smoke-check.sh [url]` checks a running copy
 - [SCAFFOLDING.md](SCAFFOLDING.md): how to set up the project skeleton
 - [requirements.txt](requirements.txt): what to install (grows stage by stage)
 - [CLAUDE.md](CLAUDE.md): rules for AI coding assistants
