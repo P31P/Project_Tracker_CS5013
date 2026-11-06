@@ -18,14 +18,14 @@ Instructions for any AI coding assistant working in this repo.
 
 Context: `Proposal_Doc.pdf`, `Design_Doc.pdf`. Plans: `plans/SHARED.md`, `plans/PRIYAL.md`, `plans/SUJAL.md`. Skeleton guide: `SCAFFOLDING.md`.
 
-**Current stage:** Phase 2 mostly done. Home, Projects (list and board, members, tags, links), Ideas (tags, upvotes, discussion), Papers (detail page, Fix details) and search are built, with a light/dark theme switch, sign-in and sign-out, and auto-fill (off by default). The PDF step of the paper resolver, paper references, seed data and deployment are next.
+**Current stage:** Phase 2 done (seed data still to do). Phase 3 is the lab's feedback after the demo: more project and idea fields with built-in tags, member profiles with interest-based activity on Home, a Lab Manager role that gives and removes access, a People tab, and search filters (see `plans/SHARED.md`). Deployment is Phase 4.
 
 ## Team & ownership
 
 | Module | Owner |
 |---|---|
-| A: Slack ingestion, B: Paper archive, C: Search & paper views | Priyal Patel (`P31P`) |
-| D: Auth & data layer, E: Projects & ideas, F: AI auto-fill | Sujal Jayant Kumar (`SujalKumar06`) |
+| A: Slack ingestion, B: Paper archive, C: Search, People, profiles & paper views | Priyal Patel (`P31P`) |
+| D: Auth, roles & data layer, E: Projects & ideas, F: AI auto-fill | Sujal Jayant Kumar (`SujalKumar06`) |
 | G: Deployment & handoff | Both |
 
 Shared files where changes need care: `pom.xml`, `application.yml`.
