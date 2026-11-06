@@ -176,7 +176,8 @@ class AutoFillServiceTest {
     @Test
     void partsTheNoteDoesNotMentionStayEmpty() {
         modelAnswers("{\"title\": \"Gut microbiome\", \"description\": \"\", \"tags\": [],"
-                + " \"coreQuestion\": \"\", \"motivation\": \"  \", \"approach\": 7}");
+                + " \"coreQuestion\": \"\", \"motivation\": \"  \", \"approach\": 7, \"resources\": \"None mentioned\","
+                + " \"challenges\": \"N/A.\"}");
 
         AutoFillSuggestion suggestion = autoFill.suggest("gut microbiome");
 
@@ -184,6 +185,7 @@ class AutoFillServiceTest {
         assertThat(suggestion.motivation()).isNull();
         assertThat(suggestion.approach()).isNull();
         assertThat(suggestion.resources()).isNull();
+        assertThat(suggestion.challenges()).isNull();
     }
 
     @Test
