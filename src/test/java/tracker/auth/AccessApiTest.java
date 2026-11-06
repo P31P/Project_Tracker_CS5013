@@ -120,8 +120,28 @@ class AccessApiTest extends PostgresTestBase {
     }
 
     @Test
+    void addingSomeoneAgainKeepsTheirRoleUnlessOneIsGiven() throws Exception {
+        user("helper@example.com", "LAB_MANAGER", false);
+
+        send(post("/api/access"), MANAGER, "{\"email\": \"helper@example.com\"}")
+                .andExpect(jsonPath("$.role").value("LAB_MANAGER"))
+                .andExpect(jsonPath("$.allowlisted").value(true));
+        send(post("/api/access"), MANAGER, "{\"email\": \"helper@example.com\", \"role\": \"MEMBER\"}")
+                .andExpect(jsonPath("$.role").value("MEMBER"));
+    }
+
+    @Test
+    void theFirstAdminCanMakeTheLabHeadAnAdmin() throws Exception {
+        send(post("/api/access"), as("da24b026@smail.iitm.ac.in"),
+                "{\"email\": \"head@example.com\", \"role\": \"ADMIN\"}")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.role").value("ADMIN"));
+    }
+
+    @Test
     void theSignedInUsersRoleIsInMe() throws Exception {
         mvc.perform(get("/api/me").with(MANAGER)).andExpect(jsonPath("$.role").value("LAB_MANAGER"));
+        mvc.perform(get("/api/me").with(as("da24b026@smail.iitm.ac.in"))).andExpect(jsonPath("$.role").value("ADMIN"));
         user("member@example.com", "MEMBER", true);
         mvc.perform(get("/api/me").with(as("member@example.com"))).andExpect(jsonPath("$.role").value("MEMBER"));
     }
