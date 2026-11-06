@@ -36,7 +36,7 @@ public class AccessService {
      *
      * @param email their Google account's email address; required
      * @param name their name; optional
-     * @param role their role; {@code MEMBER} if left out
+     * @param role their role; if left out, someone new is a {@code MEMBER} and someone known keeps theirs
      */
     public record NewPerson(String email, String name, Role role) {
     }
@@ -89,10 +89,10 @@ public class AccessService {
         if (!email.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Give the Google account's email address");
         }
-        Role role = person.role() == null ? Role.MEMBER : person.role();
-        requireAllowedToGive(actor, role);
         String name = person.name() == null || person.name().isBlank() ? null : person.name().strip();
         AppUser user = users.findByEmail(email).orElseGet(() -> new AppUser(email, name));
+        Role role = person.role() != null ? person.role() : user.getId() == null ? Role.MEMBER : user.getRole();
+        requireAllowedToGive(actor, role);
         if (user.getRole() == Role.ADMIN && role != Role.ADMIN) {
             requireAdmin(actor);
         }
