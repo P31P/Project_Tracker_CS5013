@@ -5,7 +5,7 @@ import { renderIdeas } from './ideas.js';
 import { renderPapers } from './papers.js';
 import { renderPeople } from './people.js';
 import { renderProjects } from './projects.js';
-import { initSearchBar, renderSearch } from './search.js';
+import { initSearchShortcut, renderSearch } from './search.js';
 import { renderThemePicker } from './theme.js';
 import { el, hueOf, initials, toast } from './ui.js';
 
@@ -74,10 +74,8 @@ registerTab('projects', 'Projects', renderProjects, 'What the lab is working on,
 registerTab('ideas', 'Ideas', renderIdeas, 'Thoughts worth keeping. Discuss and upvote the good ones, and turn one into a project when it is ready.', 'bulb');
 registerTab('papers', 'Papers', renderPapers, 'Papers shared in Slack, with their details filled in automatically.', 'paper');
 registerTab('people', 'People', renderPeople, 'Who is in the lab, their background, and what they are interested in.', 'users');
-
-registerTab('search', 'Search', renderSearch, 'Projects, ideas and papers that match.', 'search');
-document.getElementById('tab-search').hidden = true;
-initSearchBar(document.getElementById('search'));
+registerTab('search', 'Search', renderSearch, 'Find projects, ideas and papers, and narrow them down by tags, person or date.', 'search');
+initSearchShortcut();
 
 window.addEventListener('hashchange', showTab);
 showTab();

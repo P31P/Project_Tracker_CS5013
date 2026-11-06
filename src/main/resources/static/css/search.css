@@ -1,25 +1,43 @@
-.search {
+.search-form {
+    margin-bottom: 1.5rem;
+}
+
+.search-bar {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.search-box {
     position: relative;
-    width: 15rem;
+    flex: 1;
+    min-width: 0;
 }
 
 .search-icon {
     position: absolute;
     top: 50%;
-    left: 0.7rem;
+    left: 0.75rem;
     display: flex;
     transform: translateY(-50%);
     color: var(--muted);
     pointer-events: none;
 }
 
-.search .search-input {
-    padding-left: 2.1rem;
+.search-box .input {
+    padding-left: 2.2rem;
 }
 
-/* the tab exists only so #search/... routes work; it has no button in the bar */
-.tab[hidden] {
-    display: none;
+/* four filters side by side, wrapping to two or one column on narrow screens */
+.search-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 0 0.75rem;
+    align-items: end;
+}
+
+.search-clear {
+    justify-self: start;
+    margin-top: 1rem;
 }
 
 .search-group {
@@ -38,12 +56,15 @@
     display: flex;
     gap: 0.75rem;
     align-items: flex-start;
+}
+
+.search-result-link {
     color: inherit;
     text-decoration: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .search-result:hover {
+    .search-result:has(.search-result-link:hover) {
         border-color: color-mix(in oklch, var(--text) 18%, var(--border));
         box-shadow: var(--shadow);
     }
@@ -71,15 +92,12 @@
     font-size: 0.9rem;
 }
 
-@media (max-width: 40rem) {
-    .search {
-        order: 4;
-        flex-basis: 100%;
-        width: auto;
-        padding-bottom: 0.6rem;
-    }
+.search-result-meta {
+    margin: 0.3rem 0 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
 
-    .search-icon {
-        top: calc(50% - 0.3rem);
-    }
+.search-result .tag-list {
+    margin-top: 0.4rem;
 }

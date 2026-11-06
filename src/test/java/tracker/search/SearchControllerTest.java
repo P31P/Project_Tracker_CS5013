@@ -60,4 +60,30 @@ class SearchControllerTest extends PostgresTestBase {
         mvc.perform(get("/api/search").param("q", "x"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void repeatedTagParametersMustAllMatch() throws Exception {
+        jdbc.sql("INSERT INTO idea (title, tags) VALUES ('Both tags', '{graphs,genomics}')").update();
+        jdbc.sql("INSERT INTO idea (title, tags) VALUES ('One tag', '{graphs}')").update();
+
+        mvc.perform(get("/api/search").param("tag", "Graphs").param("tag", "#genomics").with(oidcLogin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].title").value("Both tags"))
+                .andExpect(jsonPath("$[0].tags[0]").value("graphs"));
+    }
+
+    @Test
+    void badDateIsRefusedWithAMessage() throws Exception {
+        mvc.perform(get("/api/search").param("from", "5/11/2026").with(oidcLogin()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Dates look like 2026-11-05, not 5/11/2026"));
+    }
+
+    @Test
+    void startAfterEndIsRefused() throws Exception {
+        mvc.perform(get("/api/search").param("from", "2026-11-05").param("to", "2026-11-01").with(oidcLogin()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("The start date is after the end date"));
+    }
 }
