@@ -7,6 +7,7 @@ import { plainText } from './markdown.js';
 import {
     button, el, emptyState, errorState, field, filterChips, input, relativeTime, select, skeleton, splitTags, tagList,
 } from './ui.js';
+import { tagPicker } from './tags.js';
 
 const KINDS = [['PROJECT', 'Projects', 'folder'], ['IDEA', 'Ideas', 'bulb'], ['PAPER', 'Papers', 'paper']];
 const MAX_RESULTS = 50;
@@ -93,14 +94,19 @@ function searchForm(search, filtered) {
     box.setAttribute('aria-label', 'Search projects, ideas and papers');
 
     const person = select('person', [['', 'Anyone']], '');
+    // open while tags are picked, so picking another doesn't mean opening it again
+    const tags = el('details', 'search-tags',
+        el('summary', null, search.tags.length > 0 ? 'Tags: ' + search.tags.join(', ') : 'Tags'),
+        tagPicker('tags', search.tags));
+    tags.open = search.tags.length > 0;
     const filters = el('div', 'search-filters',
-        field('Tags', input('tags', { value: search.tags.join(', '), placeholder: 'genomics, machine learning' })),
         field('Person', person),
         field('Added from', input('from', { value: search.from, type: 'date' })),
         field('Added to', input('to', { value: search.to, type: 'date' })),
         filtered && button(['close', 'Clear filters'], 'link-button search-clear', () => {
             location.hash = 'search/' + hashParams({ ...search, tags: [], person: '', from: '', to: '' });
-        }));
+        }),
+        tags);
 
     const form = el('form', 'search-form',
         el('div', 'search-bar', el('label', 'search-box', el('span', 'search-icon', icon('search', 16)), box),

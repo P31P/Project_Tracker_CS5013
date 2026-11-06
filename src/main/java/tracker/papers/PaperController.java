@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -37,6 +38,7 @@ public class PaperController {
     private final PaperReferenceRepository references;
     private final PaperMarks marks;
     private final CurrentUser currentUser;
+    private final JdbcClient jdbc;
 
     /**
      * Creates the controller.
@@ -46,14 +48,16 @@ public class PaperController {
      * @param references where papers' reference lists are stored
      * @param marks where upvotes and read marks are stored
      * @param currentUser finds the signed-in user
+     * @param jdbc finds the projects and ideas that list a paper
      */
     public PaperController(PaperRepository papers, PaperShareRepository shares, PaperReferenceRepository references,
-                           PaperMarks marks, CurrentUser currentUser) {
+                           PaperMarks marks, CurrentUser currentUser, JdbcClient jdbc) {
         this.papers = papers;
         this.shares = shares;
         this.references = references;
         this.marks = marks;
         this.currentUser = currentUser;
+        this.jdbc = jdbc;
     }
 
     /**
@@ -96,6 +100,30 @@ public class PaperController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No such paper");
         }
         return references.findByPaperIdOrderByPosition(id).stream().map(PaperReferenceDto::from).toList();
+    }
+
+    /**
+     * Lists the projects and ideas that have the paper among their references, projects first, by title. Handles
+     * {@code GET /api/papers/{id}/used-in}.
+     *
+     * @param id the paper's id
+     * @return where the paper is used
+     * @throws ResponseStatusException {@code 404} if there is no paper with this id
+     */
+    @GetMapping("/{id}/used-in")
+    public List<PaperUse> usedIn(@PathVariable Long id) {
+        find(id);
+        return jdbc.sql("""
+                        SELECT 'PROJECT' AS type, p.id, p.title FROM project_paper pp JOIN project p ON p.id = pp.project_id
+                        WHERE pp.paper_id = :paper
+                        UNION ALL
+                        SELECT 'IDEA', i.id, i.title FROM idea_paper ip JOIN idea i ON i.id = ip.idea_id
+                        WHERE ip.paper_id = :paper
+                        ORDER BY type DESC, title
+                        """)
+                .param("paper", id)
+                .query((rs, row) -> new PaperUse(rs.getString("type"), rs.getLong("id"), rs.getString("title")))
+                .list();
     }
 
     /**

@@ -113,6 +113,20 @@
     margin-top: 1.5rem;
 }
 
+.used-in {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.used-in a {
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
 .reference-list {
     margin: 0;
     padding-left: 1.75rem;

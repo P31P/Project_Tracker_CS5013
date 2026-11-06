@@ -170,6 +170,18 @@ class SearchServiceTest extends PostgresTestBase {
         assertThat(search.search(null, SearchFilters.only(SearchType.PROJECT))).isEmpty();
     }
 
+    @Test
+    void theWriteUpOfProjectsAndIdeasIsSearchable() {
+        jdbc.sql("INSERT INTO project (title, core_question, challenges) VALUES "
+                + "('Plain title', 'Can we predict growth rates?', 'Noisy chemostat data')").update();
+        jdbc.sql("INSERT INTO idea (title, approach) VALUES ('Another plain title', 'Use a chemostat')").update();
+
+        assertThat(search.search("growth rates", SearchFilters.NONE)).extracting(SearchResult::title)
+                .containsExactly("Plain title");
+        assertThat(search.search("chemostat", SearchFilters.NONE)).extracting(SearchResult::title)
+                .containsExactlyInAnyOrder("Plain title", "Another plain title");
+    }
+
     private static SearchFilters tags(String... tags) {
         return new SearchFilters(null, List.of(tags), null, null, null);
     }

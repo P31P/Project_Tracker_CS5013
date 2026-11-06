@@ -53,6 +53,7 @@ export function tagPicker(name, selected = []) {
             // once the person touches a suggested tag it is theirs, so a new suggestion leaves it alone
             suggested.delete(tag);
             draw();
+            changed();
         });
         node.setAttribute('aria-pressed', String(chosen.has(tag)));
         return node;
@@ -74,8 +75,11 @@ export function tagPicker(name, selected = []) {
             chosen.add(tag);
             suggested.delete(tag);
         });
-        typed.value = '';
-        draw();
+        if (typed.value.trim()) {
+            typed.value = '';
+            draw();
+            changed();
+        }
     };
     typed.addEventListener('keydown', event => {
         // Enter adds the tag instead of sending the form
@@ -87,6 +91,8 @@ export function tagPicker(name, selected = []) {
     typed.addEventListener('blur', addTyped);
 
     const picker = el('div', 'tag-picker', groups, typed, hidden);
+    // a "change" event that bubbles, so a form can react to picked tags as it does to other fields
+    const changed = () => picker.dispatchEvent(new Event('change', { bubbles: true }));
     picker.tags = () => [...chosen];
     picker.suggest = tags => {
         suggested.forEach(tag => chosen.delete(tag));

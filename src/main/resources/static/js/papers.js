@@ -8,6 +8,7 @@ import {
     button, el, errorState, field, filterChips, formDialog, input, segmented, skeleton, splitTags, tagList, tagPill,
     textarea, toast,
 } from './ui.js';
+import { tagPicker } from './tags.js';
 
 const REFRESH_MS = 10000;
 const MAX_AUTHORS = 3;
@@ -183,8 +184,9 @@ async function renderPaper(container, page, id) {
         container.replaceChildren(errorState(problem.message));
         return;
     }
-    // loaded once; fixing the details redraws the page but doesn't change the references
+    // loaded once; fixing the details redraws the page but doesn't change the references or where it is used
     const references = referencesSection(paper.id);
+    const usedIn = usedInSection(paper.id);
     const replace = updated => {
         paper = updated;
         draw();
@@ -198,7 +200,7 @@ async function renderPaper(container, page, id) {
             readToggle(paper, replace, 'button button-secondary'),
             button(['tag', 'Edit tags'], 'button button-secondary', () => tagsDialog(paper, replace)),
             button(['edit', 'Fix details'], 'button button-secondary', () => fixDialog(paper, replace)));
-        container.replaceChildren(el('div', 'card', el('dl', 'paper-facts', ...facts(paper))), references);
+        container.replaceChildren(el('div', 'card', el('dl', 'paper-facts', ...facts(paper))), usedIn, references);
     };
     draw();
 }
@@ -211,6 +213,22 @@ function referencesSection(paperId) {
             ? el('ol', 'reference-list', ...references.map(referenceItem))
             : el('p', 'muted', 'References not available. They come from Crossref, so only papers it knows have them.')))
         .catch(problem => body.replaceWith(errorState('Could not load the references. ' + problem.message)));
+    return section;
+}
+
+// the lab's projects and ideas that list this paper as a reference
+function usedInSection(paperId) {
+    const body = el('p', 'muted', 'Loading…');
+    const section = el('section', 'paper-references', el('h2', 'section-title', 'Used in'), body);
+    getJson('/api/papers/' + paperId + '/used-in')
+        .then(uses => body.replaceWith(uses.length > 0
+            ? el('ul', 'used-in', ...uses.map(use => {
+                const anchor = el('a', null, icon(use.type === 'PROJECT' ? 'folder' : 'bulb', 14), use.title);
+                anchor.href = use.type === 'PROJECT' ? '#projects/' + use.id : '#ideas';
+                return el('li', null, anchor);
+            }))
+            : el('p', 'muted', 'No project or idea lists this paper yet. Add it from a project’s page.')))
+        .catch(problem => body.replaceWith(errorState('Could not load where it is used. ' + problem.message)));
     return section;
 }
 
@@ -257,8 +275,7 @@ function voteAction(paper, replace) {
 
 function tagsDialog(paper, onSaved) {
     formDialog('Edit tags', [
-        field('Tags, separated by commas',
-            input('tags', { value: paper.tags.join(', '), placeholder: 'genomics, machine learning' })),
+        field('Tags', tagPicker('tags', paper.tags)),
     ], 'Save', async values => {
         const updated = await sendJson('PUT', '/api/papers/' + paper.id + '/tags', { tags: splitTags(values.tags) });
         toast('Tags saved');
