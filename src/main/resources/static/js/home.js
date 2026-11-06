@@ -40,9 +40,9 @@ async function load(container, page) {
     container.replaceChildren(
         card,
         el('div', 'stats',
-            statCard('Active projects', counts.active, '#projects'),
+            statCard('Ongoing projects', counts.active, '#projects'),
             statCard('In planning', counts.planning, '#projects'),
-            statCard('Done', counts.done, '#projects'),
+            statCard('Completed', counts.done, '#projects'),
             statCard('Open ideas', counts.openIdeas, '#ideas'),
             statCard('Papers', counts.papers, '#papers')),
         el('div', 'home-grid',

@@ -1,6 +1,7 @@
 package tracker.data;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -13,6 +14,7 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -23,7 +25,8 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 /**
- * A lab project: a title, an optional description, a status, tags, an owner and members.
+ * A lab project: a title, an optional description, a status, a start date, a longer write-up, whether others can
+ * join, tags, an owner and members.
  *
  * <p>Only the title is required. Updates on its timeline are {@link ProjectUpdate}s and its links are
  * {@link ProjectLink}s.
@@ -48,6 +51,18 @@ public class Project {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
     private AppUser owner;
+
+    @Column(name = "started_on", nullable = false)
+    private LocalDate startedOn = LocalDate.now();
+
+    @Embedded
+    private ResearchDetails details = new ResearchDetails();
+
+    @Column(name = "open_for_collab", nullable = false)
+    private boolean openForCollab;
+
+    @Column(name = "collab_opened_at")
+    private OffsetDateTime collabOpenedAt;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(columnDefinition = "text[]", nullable = false)
@@ -203,6 +218,75 @@ public class Project {
      */
     public OffsetDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    /**
+     * Returns the day the project started.
+     *
+     * @return the start date
+     */
+    public LocalDate getStartedOn() {
+        return startedOn;
+    }
+
+    /**
+     * Changes the start date.
+     *
+     * @param startedOn the new start date; must not be {@code null}
+     */
+    public void setStartedOn(LocalDate startedOn) {
+        this.startedOn = startedOn;
+    }
+
+    /**
+     * Returns the longer write-up: core question, motivation, approach, resources and challenges.
+     *
+     * @return the details; never {@code null}, though every part may be
+     */
+    public ResearchDetails getDetails() {
+        // Hibernate loads an embedded value whose columns are all empty as null
+        return details == null ? new ResearchDetails() : details;
+    }
+
+    /**
+     * Replaces the longer write-up.
+     *
+     * @param details the new details, already tidied by the caller
+     */
+    public void setDetails(ResearchDetails details) {
+        this.details = details;
+    }
+
+    /**
+     * Says whether others can ask to join the project.
+     *
+     * @return {@code true} if it is open for collaboration, {@code false} if it is closed or a solo project
+     */
+    public boolean isOpenForCollab() {
+        return openForCollab;
+    }
+
+    /**
+     * Opens or closes the project for collaboration. Opening it records when, so Home can tell people about it.
+     *
+     * @param open {@code true} to open it, {@code false} to close it
+     */
+    public void setOpenForCollab(boolean open) {
+        if (open && !openForCollab) {
+            collabOpenedAt = OffsetDateTime.now();
+        } else if (!open) {
+            collabOpenedAt = null;
+        }
+        openForCollab = open;
+    }
+
+    /**
+     * Returns when the project was last opened for collaboration, or {@code null} if it isn't open.
+     *
+     * @return when it was opened, or {@code null}
+     */
+    public OffsetDateTime getCollabOpenedAt() {
+        return collabOpenedAt;
     }
 
     /** Records that the project changed now, which moves it to the top of the list. */

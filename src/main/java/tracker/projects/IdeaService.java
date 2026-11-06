@@ -80,6 +80,10 @@ public class IdeaService {
         Idea idea = new Idea(ProjectService.required(request.title(), "An idea needs a title"),
                 ProjectService.blankToNull(request.description()), author);
         idea.setTags(ProjectService.tags(request.tags()));
+        if (request.details() != null) {
+            idea.setDetails(ProjectService.details(request.details()));
+        }
+        idea.setOpenForCollab(Boolean.TRUE.equals(request.openForCollab()));
         return view(ideas.save(idea), author, 0);
     }
 
@@ -116,7 +120,8 @@ public class IdeaService {
     }
 
     /**
-     * Starts a project from an idea, in Planning and with the idea's tags, and links the two. An idea becomes a
+     * Starts a project from an idea, in Planning and with the idea's tags, write-up and collaboration status, and
+     * links the two. An idea becomes a
      * project only once.
      *
      * @param id the idea's id
@@ -131,7 +136,8 @@ public class IdeaService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This idea is already a project");
         }
         ProjectDetail project = projectService.create(new ProjectRequest(idea.getTitle(), idea.getDescription(),
-                ProjectStatus.PLANNING, idea.getTags(), null), actor);
+                ProjectStatus.PLANNING, idea.getTags(), null, null, ProjectService.view(idea.getDetails()),
+                idea.isOpenForCollab()), actor);
         idea.promotedTo(projects.getReferenceById(project.id()));
         return project;
     }
@@ -179,7 +185,8 @@ public class IdeaService {
                 idea.getTags(), idea.getCreatedAt(),
                 idea.getProject() == null ? null : idea.getProject().getId(),
                 idea.getProject() == null ? null : idea.getProject().getTitle(),
-                idea.getVoters().size(), votedBy(idea, viewer), commentCount);
+                idea.getVoters().size(), votedBy(idea, viewer), commentCount, ProjectService.view(idea.getDetails()),
+                idea.isOpenForCollab());
     }
 
     private static CommentView commentView(IdeaComment comment) {

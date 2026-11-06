@@ -1347,6 +1347,79 @@ button.tag {
     }
 }
 
+.field-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 0 0.75rem;
+}
+
+.check-field {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.badge-collab {
+    display: inline-block;
+    padding: 0.1rem 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.card-badges {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.card-title .badge-collab {
+    margin-left: 0.5rem;
+}
+
+.detail-parts {
+    display: grid;
+    gap: 1rem;
+}
+
+.detail-part-title {
+    margin: 0 0 0.3rem;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.detail-part > :last-child {
+    margin-bottom: 0;
+}
+
+.idea-details {
+    margin-top: 0.5rem;
+}
+
+.idea-details summary {
+    color: var(--accent);
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+
+.idea-details .detail-part {
+    margin-top: 0.6rem;
+}
+
+.side-text {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
 .member-option {
     display: flex;
     align-items: center;

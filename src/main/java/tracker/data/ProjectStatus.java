@@ -5,11 +5,11 @@ public enum ProjectStatus {
     /** Being planned; work has not started. */
     PLANNING("Planning"),
     /** Being worked on. New projects start here unless told otherwise. */
-    ACTIVE("Active"),
+    ACTIVE("Ongoing"),
     /** Paused for now. */
     ON_HOLD("On hold"),
     /** Finished. */
-    DONE("Done");
+    DONE("Completed");
 
     private final String label;
 

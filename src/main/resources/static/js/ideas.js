@@ -3,6 +3,7 @@
 
 import { getJson, sendJson } from './api.js';
 import { suggestButton } from './autofill.js';
+import { collabBadge, detailFields, detailSections, detailsFrom, hasDetails } from './details.js';
 import { icon } from './icons.js';
 import { markdown, markdownHint } from './markdown.js';
 import { tagPicker } from './tags.js';
@@ -25,8 +26,13 @@ function composer(onSaved) {
     description.setAttribute('aria-label', 'Details');
     // replaced with an empty picker after each save
     let tags = tagPicker('tags');
+    const collab = el('input');
+    collab.type = 'checkbox';
+    collab.name = 'openForCollab';
     const more = el('details', 'more', el('summary', null, 'Add details'),
-        el('div', 'more-fields', description, markdownHint(), tags));
+        el('div', 'more-fields', description, markdownHint(), tags,
+            el('label', 'check-field', collab, 'Looking for people to work on this with'),
+            ...detailFields()));
     const save = el('button', 'button', icon('bulb', 16), 'Save idea');
     save.type = 'submit';
     const suggest = suggestButton(() => title.value + '\n' + description.value, suggestion => {
@@ -40,8 +46,10 @@ function composer(onSaved) {
         event.preventDefault();
         save.disabled = true;
         try {
-            await sendJson('POST', '/api/ideas',
-                { title: title.value, description: description.value, tags: tags.tags() });
+            await sendJson('POST', '/api/ideas', {
+                title: title.value, description: description.value, tags: tags.tags(),
+                openForCollab: collab.checked, details: detailsFrom(Object.fromEntries(new FormData(form))),
+            });
             form.reset();
             const fresh = tagPicker('tags');
             tags.replaceWith(fresh);
@@ -125,8 +133,10 @@ function ideaCard(idea, replace, pickTag, index, discussionOpen, toggleDiscussio
     const card = el('article', 'card idea',
         voteButton(idea, replace),
         el('div', 'idea-body',
-            el('h3', 'card-title', idea.title),
+            el('h3', 'card-title', idea.title, collabBadge(idea.openForCollab)),
             idea.description && markdown(idea.description),
+            hasDetails(idea.details) && el('details', 'idea-details',
+                el('summary', null, 'More about this idea'), ...detailSections(idea.details)),
             tagList(idea.tags, pickTag),
             el('p', 'card-meta card-byline', idea.authorName && avatar(idea.authorName),
                 [idea.authorName, relativeTime(idea.createdAt)].filter(Boolean).join(' · '),
