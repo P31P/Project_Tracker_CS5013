@@ -20,6 +20,8 @@ Signed-out API calls get `401`; pages redirect to the sign-in page (`/login.html
 - `GET /api/papers`: list all archived papers with title, authors, date and who first shared them in Slack (optional `?status=PENDING|RESOLVED|UNRESOLVED`)
 - `GET /api/papers/{id}`: single paper
 - `PATCH /api/papers/{id}`: correct a paper's details (`title` required; `authors`, `publishedOn` and `doi` replace what is stored). Marks it `RESOLVED` with source `MANUAL`. In the Papers tab, open a paper's **Details** and use **Fix details**
+- `PUT /api/papers/{id}/tags` (`tags`): replace a paper's tags, tidied like project tags; doesn't change its status or source
+- `PUT`/`DELETE /api/papers/{id}/vote`: upvote a paper or take the vote back; `PUT`/`DELETE /api/papers/{id}/read`: mark it read or unread for yourself only. Paper responses carry `tags`, `voteCount`, `votedByMe` and `readByMe`, and the Papers tab filters by Unread/Read and sorts by votes
 - `GET /api/papers/{id}/references`: the paper's reference list in order (`position`, `citation`, `doi`), shown under **References** on its Details page. Only papers found in Crossref have one; papers resolved before this was added get theirs only if they are looked up again
 - `GET /api/search?q=&type=`: projects, ideas and papers matching the text (web-search syntax: `"exact phrase"`, `or`, `-exclude`), best first, at most 50; `type` is optional (`PROJECT`, `IDEA` or `PAPER`)
 - `GET /api/overview`: counts, the signed-in user's projects and the latest activity, for the Home tab

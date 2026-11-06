@@ -1,9 +1,13 @@
 // Papers tab: the list of papers shared in Slack (#papers) and one paper with a form to fix its details (#papers/<id>).
+// Anyone can upvote or tag a paper; "read" marks are each person's own.
 // Text from the API goes in as text nodes, never as HTML: titles come from outside websites.
 
 import { getJson, sendJson } from './api.js';
 import { icon } from './icons.js';
-import { button, el, errorState, field, formDialog, input, skeleton, textarea, toast } from './ui.js';
+import {
+    button, el, errorState, field, filterChips, formDialog, input, segmented, skeleton, splitTags, tagList, tagPill,
+    textarea, toast,
+} from './ui.js';
 
 const REFRESH_MS = 10000;
 const MAX_AUTHORS = 3;
@@ -23,10 +27,11 @@ export async function renderPapers(container, page) {
         return renderPaper(container, page, page.path);
     }
     container.replaceChildren(el('p', 'papers-note', 'Loading papers…'));
-    await refresh(container);
+    // kept across the automatic refreshes, so a refresh doesn't undo the reader's choices
+    await refresh(container, { filter: 'ALL', sort: 'NEW', tag: null });
 }
 
-async function refresh(container) {
+async function refresh(container, view) {
     clearTimeout(timers.get(container));
 
     let papers;
@@ -49,19 +54,48 @@ async function refresh(container) {
     }
 
     papers.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    container.replaceChildren(el('ul', 'papers', ...papers.map(paperItem)));
+    const replace = updated => {
+        papers = papers.map(paper => paper.id === updated.id ? updated : paper);
+        draw();
+    };
+    const pickTag = tag => {
+        view.tag = tag;
+        draw();
+    };
+    const draw = () => {
+        const tagged = view.tag ? papers.filter(paper => paper.tags.includes(view.tag)) : papers;
+        const unread = tagged.filter(paper => !paper.readByMe);
+        let shown = view.filter === 'UNREAD' ? unread
+            : view.filter === 'READ' ? tagged.filter(paper => paper.readByMe) : tagged;
+        if (view.sort === 'TOP') {
+            // sort is stable, so papers with the same votes stay newest first
+            shown = [...shown].sort((a, b) => b.voteCount - a.voteCount);
+        }
+        container.replaceChildren(...[
+            el('div', 'toolbar',
+                filterChips([['ALL', 'All', tagged.length], ['UNREAD', 'Unread', unread.length],
+                    ['READ', 'Read', tagged.length - unread.length]], view.filter, key => { view.filter = key; draw(); }),
+                segmented([['NEW', 'Newest'], ['TOP', 'Most votes', 'up']], view.sort, key => { view.sort = key; draw(); })),
+            view.tag && el('div', 'active-filter', 'Showing papers tagged ', tagPill(view.tag),
+                button(['close', 'Clear'], 'link-button', () => pickTag(null))),
+            shown.length > 0
+                ? el('ul', 'papers', ...shown.map(paper => paperItem(paper, replace, pickTag)))
+                : el('p', 'muted', 'Nothing here.'),
+        ].filter(Boolean));
+    };
+    draw();
 
     // new papers are looked up within about 30 s, so check again while any are waiting
     if (papers.some(paper => paper.status === 'PENDING')) {
         timers.set(container, setTimeout(() => {
             if (container.isConnected) {
-                refresh(container);
+                refresh(container, view);
             }
         }, REFRESH_MS));
     }
 }
 
-function paperItem(paper) {
+function paperItem(paper, replace, pickTag) {
     const title = paper.title || paper.normalizedUrl;
     const heading = el('div', 'paper-head', link(paper.normalizedUrl, title, 'paper-title'));
 
@@ -70,9 +104,13 @@ function paperItem(paper) {
         heading.append(badgeNode);
     }
 
-    const item = el('li', 'paper', heading);
+    const body = el('div', 'paper-body', heading);
     if (paper.authors && paper.authors.length > 0) {
-        item.append(el('p', 'paper-authors', formatAuthors(paper.authors)));
+        body.append(el('p', 'paper-authors', formatAuthors(paper.authors)));
+    }
+    const tags = tagList(paper.tags, pickTag);
+    if (tags) {
+        body.append(tags);
     }
 
     const details = el('p', 'paper-meta');
@@ -92,9 +130,35 @@ function paperItem(paper) {
     }
     const open = el('a', null, 'Details');
     open.href = '#papers/' + paper.id;
-    details.append(details.hasChildNodes() ? ' · ' : '', open);
-    item.append(details);
-    return item;
+    details.append(details.hasChildNodes() ? ' · ' : '', open, ' · ', readToggle(paper, replace, 'link-button'));
+    body.append(details);
+    return el('li', paper.readByMe ? 'paper paper-read' : 'paper', voteButton(paper, replace), body);
+}
+
+function voteButton(paper, replace) {
+    const vote = button(el('span', 'vote-inner', icon('up', 18), el('span', 'vote-count', String(paper.voteCount))),
+        'vote', () => send(vote, paper.votedByMe ? 'DELETE' : 'PUT', paper.id + '/vote', replace));
+    vote.setAttribute('aria-pressed', String(paper.votedByMe));
+    vote.setAttribute('aria-label', (paper.votedByMe ? 'Remove your vote' : 'Upvote') + ', ' + paper.voteCount + ' votes');
+    return vote;
+}
+
+function readToggle(paper, replace, className) {
+    const toggle = button(paper.readByMe ? ['check', 'Read'] : 'Mark as read', className,
+        () => send(toggle, paper.readByMe ? 'DELETE' : 'PUT', paper.id + '/read', replace));
+    toggle.setAttribute('aria-pressed', String(paper.readByMe));
+    toggle.title = paper.readByMe ? 'Mark as unread' : 'Only you see what you have read';
+    return toggle;
+}
+
+async function send(control, method, path, replace) {
+    control.disabled = true;
+    try {
+        replace(await sendJson(method, '/api/papers/' + path));
+    } catch (problem) {
+        toast(problem.message, 'error');
+        control.disabled = false;
+    }
 }
 
 function statusBadge(paper) {
@@ -121,15 +185,19 @@ async function renderPaper(container, page, id) {
     }
     // loaded once; fixing the details redraws the page but doesn't change the references
     const references = referencesSection(paper.id);
+    const replace = updated => {
+        paper = updated;
+        draw();
+    };
     const draw = () => {
         page.heading.textContent = paper.title || paper.normalizedUrl;
         document.title = (paper.title || 'Paper') + ' · Raman Lab Tracker';
         page.description.replaceChildren(...[backLink(), statusBadge(paper)].filter(Boolean));
-        page.actions.replaceChildren(button(['edit', 'Fix details'], 'button button-secondary',
-            () => fixDialog(paper, updated => {
-                paper = updated;
-                draw();
-            })));
+        page.actions.replaceChildren(
+            voteAction(paper, replace),
+            readToggle(paper, replace, 'button button-secondary'),
+            button(['tag', 'Edit tags'], 'button button-secondary', () => tagsDialog(paper, replace)),
+            button(['edit', 'Fix details'], 'button button-secondary', () => fixDialog(paper, replace)));
         container.replaceChildren(el('div', 'card', el('dl', 'paper-facts', ...facts(paper))), references);
     };
     draw();
@@ -170,6 +238,7 @@ function facts(paper) {
     add('Authors', paper.authors && paper.authors.length > 0 ? paper.authors.join(', ') : null);
     add('Published', paper.publishedOn);
     add('DOI', paper.doi);
+    add('Tags', tagList(paper.tags));
     add('Paper', link(paper.normalizedUrl, paper.normalizedUrl));
     if (paper.sharedAt) {
         add('Shared', (paper.sharedBy ? 'by ' + paper.sharedBy + ' on ' : 'on ') + formatDate(paper.sharedAt));
@@ -177,6 +246,24 @@ function facts(paper) {
     add('Slack', isWebLink(paper.slackPermalink) ? link(paper.slackPermalink, 'View in Slack') : null);
     add('Details from', paper.source ? SOURCES[paper.source] || paper.source : null);
     return rows;
+}
+
+function voteAction(paper, replace) {
+    const vote = button(['up', (paper.votedByMe ? 'Upvoted' : 'Upvote') + ' · ' + paper.voteCount],
+        'button button-secondary', () => send(vote, paper.votedByMe ? 'DELETE' : 'PUT', paper.id + '/vote', replace));
+    vote.setAttribute('aria-pressed', String(paper.votedByMe));
+    return vote;
+}
+
+function tagsDialog(paper, onSaved) {
+    formDialog('Edit tags', [
+        field('Tags, separated by commas',
+            input('tags', { value: paper.tags.join(', '), placeholder: 'genomics, machine learning' })),
+    ], 'Save', async values => {
+        const updated = await sendJson('PUT', '/api/papers/' + paper.id + '/tags', { tags: splitTags(values.tags) });
+        toast('Tags saved');
+        onSaved(updated);
+    });
 }
 
 function fixDialog(paper, onSaved) {
