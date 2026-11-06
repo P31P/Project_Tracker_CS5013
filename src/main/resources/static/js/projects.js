@@ -1,9 +1,10 @@
 // Projects tab: the list or board (#projects) and one project with its timeline (#projects/<id>).
 
 import { getJson, sendJson } from './api.js';
-import { mergeSuggestedTags, suggestButton } from './autofill.js';
+import { suggestButton } from './autofill.js';
 import { icon } from './icons.js';
 import { markdown, markdownHint, plainText } from './markdown.js';
+import { tagPicker } from './tags.js';
 import {
     avatar, avatarStack, button, el, emptyState, errorState, field, filterChips, formDialog, input, relativeTime,
     segmented, select, skeleton, splitTags, tagList, tagPill, textarea, toast,
@@ -206,7 +207,7 @@ export async function newProjectDialog() {
     const picker = memberPicker(everyone, []);
     const title = input('title', { placeholder: 'What are you working on?', required: true });
     const description = textarea('description', { placeholder: 'What is it about? Any context.' });
-    const tags = input('tags', { placeholder: 'e.g. genomics, ml' });
+    const tags = tagPicker('tags');
     const more = el('details', 'more',
         el('summary', null, 'More details (optional)'),
         field('Description', description),
@@ -217,7 +218,7 @@ export async function newProjectDialog() {
     const suggest = suggestButton(() => title.value + '\n' + description.value, suggestion => {
         title.value = suggestion.title;
         description.value = suggestion.description || '';
-        tags.value = mergeSuggestedTags(tags, suggestion.tags);
+        tags.suggest(suggestion.tags);
         more.open = true;
     });
     formDialog('New project', [
@@ -239,7 +240,7 @@ async function editDialog(project, redraw) {
         field('Title', input('title', { value: project.title, required: true })),
         field('Description', textarea('description', { value: project.description || '', rows: 5 })),
         markdownHint(),
-        field('Tags', input('tags', { value: project.tags.join(', '), placeholder: 'e.g. genomics, ml' })),
+        field('Tags', tagPicker('tags', project.tags)),
         picker && field('Members', picker),
     ].filter(Boolean), 'Save', async values => {
         const changes = { ...values, tags: splitTags(values.tags) };
