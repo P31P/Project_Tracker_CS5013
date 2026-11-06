@@ -278,7 +278,8 @@ public class IdeaService {
                 idea.getProject() == null ? null : idea.getProject().getId(),
                 idea.getProject() == null ? null : idea.getProject().getTitle(),
                 idea.getVoters().size(), votedBy(idea, viewer), commentCount, ProjectService.view(idea.getDetails()),
-                idea.isOpenForCollab(), ideaLinks, ProjectService.paperRefs(idea.getPapers()));
+                idea.isOpenForCollab(), ideaLinks, ProjectService.paperRefs(idea.getPapers()),
+                idea.getAuthor() == null ? null : idea.getAuthor().getId());
     }
 
     private static CommentView commentView(IdeaComment comment) {

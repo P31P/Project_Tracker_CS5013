@@ -3,7 +3,7 @@
 
 import { getJson } from './api.js';
 import { icon } from './icons.js';
-import { loadProfileStyles, profileCard } from './profile.js';
+import { loadProfileStyles, profileCard, roleBadge } from './profile.js';
 import { statusChip } from './projects.js';
 import {
     avatar, avatarStack, button, el, emptyState, errorState, input, relativeTime, skeleton, tagList, tagPill,
@@ -56,7 +56,7 @@ function personCard(person, pickInterest) {
     name.href = '#people/' + person.id;
     return el('article', 'card person-card',
         el('div', 'person-head', avatar(person.name, 'avatar-person'),
-            el('div', 'person-who', name,
+            el('div', 'person-who', el('p', 'person-name-row', name, roleBadge(person.role)),
                 el('p', 'person-background', person.background || 'No background added yet'))),
         tagList(person.interests, pickInterest),
         el('p', 'person-counts', counts));

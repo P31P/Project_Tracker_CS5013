@@ -9,6 +9,7 @@ import org.springframework.web.server.ResponseStatusException;
 import tracker.data.AppUser;
 import tracker.data.AppUserRepository;
 import tracker.data.IdeaRepository;
+import tracker.data.Role;
 import tracker.profile.IdeaSummary;
 import tracker.profile.ProfileView;
 import tracker.projects.ProjectDtos.ProjectSummary;
@@ -28,9 +29,10 @@ public class DirectoryService {
      * @param interests their fields of interest
      * @param projectCount how many projects they own or are a member of
      * @param ideaCount how many ideas they wrote
+     * @param role what they may do
      */
     public record PersonCard(Long id, String name, String background, List<String> interests, long projectCount,
-                             long ideaCount) {
+                             long ideaCount, Role role) {
     }
 
     /**
@@ -44,7 +46,7 @@ public class DirectoryService {
     }
 
     private static final String DIRECTORY_SQL = """
-            SELECT u.id, coalesce(u.name, u.email) AS name, u.background, u.interests,
+            SELECT u.id, coalesce(u.name, u.email) AS name, u.background, u.interests, u.role,
                    (SELECT count(*) FROM project p
                     WHERE p.owner_id = u.id
                        OR EXISTS (SELECT 1 FROM project_member m WHERE m.project_id = p.id AND m.user_id = u.id))
@@ -85,7 +87,7 @@ public class DirectoryService {
         return jdbc.sql(DIRECTORY_SQL)
                 .query((rs, row) -> new PersonCard(rs.getLong("id"), rs.getString("name"), rs.getString("background"),
                         List.of((String[]) rs.getArray("interests").getArray()), rs.getLong("project_count"),
-                        rs.getLong("idea_count")))
+                        rs.getLong("idea_count"), Role.valueOf(rs.getString("role"))))
                 .list();
     }
 

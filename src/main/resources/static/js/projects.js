@@ -330,8 +330,9 @@ async function renderProject(container, page, id) {
         page.heading.textContent = project.title;
         document.title = project.title + ' · Raman Lab Tracker';
         page.description.replaceChildren(backLink(), statusChip(project.status),
-            el('span', 'muted', [project.ownerName && 'Owned by ' + project.ownerName,
-                'started ' + relativeTime(project.createdAt)].filter(Boolean).join(' · ')));
+            el('span', 'muted', ...(project.ownerName
+                ? ['Owned by ', personLink(project.ownerId, project.ownerName), ' · '] : []),
+                'started ' + relativeTime(project.createdAt)));
         page.actions.replaceChildren(voteButton(project, redraw),
             button(['edit', 'Edit'], 'button button-secondary', () => editDialog(project, redraw)));
         const about = project.description && el('div', 'card', markdown(project.description));
@@ -343,6 +344,16 @@ async function renderProject(container, page, id) {
             el('aside', 'card detail-side', ...sidePanel(project, redraw))));
     };
     draw();
+}
+
+/** A person's name that opens their page in the People tab. */
+export function personLink(id, name) {
+    if (id === null || id === undefined) {
+        return el('span', null, name);
+    }
+    const link = el('a', 'person-link', name);
+    link.href = '#people/' + id;
+    return link;
 }
 
 function backLink() {
@@ -364,7 +375,7 @@ function sidePanel(project, redraw) {
             project.openForCollab ? 'Open: others can ask to join' : 'Closed or solo')),
         sideSection('Members', project.members.length > 0
             ? el('ul', 'people', ...project.members.map(person =>
-                el('li', 'person', avatar(person.name), el('span', null, person.name))))
+                el('li', 'person', avatar(person.name), personLink(person.id, person.name))))
             : el('p', 'muted side-empty', 'No members yet.')),
         sideSection('Tags', tagList(project.tags) || el('p', 'muted side-empty', 'No tags yet. Add some with Edit.')),
         sideSection('Links', linkList(project, base, redraw), linkForm(base, redraw)),

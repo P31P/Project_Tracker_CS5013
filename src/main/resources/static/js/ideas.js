@@ -6,6 +6,7 @@ import { suggestButton } from './autofill.js';
 import { collabBadge, detailFields, detailSections, detailsFrom, fillDetails, hasDetails } from './details.js';
 import { icon } from './icons.js';
 import { markdown, markdownHint } from './markdown.js';
+import { personLink } from './projects.js';
 import { linkForm, linkList, paperList, paperPicker } from './references.js';
 import { tagPicker } from './tags.js';
 import {
@@ -142,7 +143,8 @@ function ideaCard(idea, replace, pickTag, index, discussionOpen, toggleDiscussio
             references(idea),
             tagList(idea.tags, pickTag),
             el('p', 'card-meta card-byline', idea.authorName && avatar(idea.authorName),
-                [idea.authorName, relativeTime(idea.createdAt)].filter(Boolean).join(' · '),
+                idea.authorName && personLink(idea.authorId, idea.authorName),
+                (idea.authorName ? ' · ' : '') + relativeTime(idea.createdAt),
                 discussionToggle(idea, discussionOpen, toggleDiscussion))),
         el('div', 'idea-action', idea.projectId !== null ? projectLink(idea) : promoteButton(idea)),
         discussionOpen && discussion(idea, replace, drafts));

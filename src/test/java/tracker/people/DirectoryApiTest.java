@@ -75,6 +75,14 @@ class DirectoryApiTest extends PostgresTestBase {
     }
 
     @Test
+    void cardsAndPagesSayWhoManagesAccess() throws Exception {
+        mvc.perform(get("/api/people/directory").with(oidcLogin()))
+                .andExpect(jsonPath("$[?(@.name == 'Priyal Patel')].role").value("LAB_MANAGER"));
+        mvc.perform(get("/api/people/" + priyal).with(oidcLogin()))
+                .andExpect(jsonPath("$.profile.role").value("LAB_MANAGER"));
+    }
+
+    @Test
     void unknownOrRemovedPeopleGive404() throws Exception {
         long gone = jdbc.sql("INSERT INTO app_user (email, name, allowlisted) VALUES ('gone@example.com', 'Gone', false) "
                 + "RETURNING id").query(Long.class).single();

@@ -3,6 +3,7 @@
 
 import { sendJson } from './api.js';
 import { markdown, markdownHint } from './markdown.js';
+import { tagPicker } from './tags.js';
 import { avatar, button, el, field, formDialog, input, splitTags, tagList, textarea, toast } from './ui.js';
 
 /**
@@ -24,13 +25,20 @@ export function profileCard(profile, onSaved) {
         el('div', 'profile-head',
             avatar(profile.name, 'avatar-profile'),
             el('div', 'profile-who',
-                el('h2', 'profile-name', profile.name),
+                el('h2', 'profile-name', profile.name, roleBadge(profile.role)),
                 profile.background && el('p', 'profile-background', profile.background),
                 el('p', 'profile-email', profile.email)),
             edit),
         intro,
         profile.interests.length > 0 && el('div', 'profile-interests',
             el('h3', 'profile-label', 'Interested in'), tagList(profile.interests)));
+}
+
+const ROLE_LABELS = { LAB_MANAGER: 'Lab Manager', ADMIN: 'Admin' };
+
+/** "Lab Manager" or "Admin", so people know whom to ask for access; nothing for a member. */
+export function roleBadge(role) {
+    return ROLE_LABELS[role] ? el('span', 'role-badge', ROLE_LABELS[role]) : null;
 }
 
 function editProfileDialog(profile, onSaved) {
@@ -42,9 +50,7 @@ function editProfileDialog(profile, onSaved) {
         field('Study background', input('background', {
             value: profile.background || '', placeholder: 'PhD, systems biology',
         })),
-        field('Fields of interest, separated by commas', input('interests', {
-            value: profile.interests.join(', '), placeholder: 'genomics, machine learning, metabolic modeling',
-        })),
+        field('Fields of interest', tagPicker('interests', profile.interests)),
     ], 'Save', async values => {
         const saved = await sendJson('PATCH', '/api/profile', {
             bio: values.bio, background: values.background, interests: splitTags(values.interests),

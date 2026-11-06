@@ -37,14 +37,18 @@ async function load(container, page) {
     // saving the profile changes "For you" too, so the whole page is drawn again
     const card = profileCard(profile, () => load(container, page));
     const counts = overview.counts;
-    container.replaceChildren(
-        card,
+    // the lab-wide numbers are the admin's view; members get their own dashboard
+    const labWide = profile.role === 'ADMIN' && el('section', 'lab-overview',
+        sectionHead('Across the lab'),
         el('div', 'stats',
             statCard('Ongoing projects', counts.active, '#projects'),
             statCard('In planning', counts.planning, '#projects'),
             statCard('Completed', counts.done, '#projects'),
             statCard('Open ideas', counts.openIdeas, '#ideas'),
-            statCard('Papers', counts.papers, '#papers')),
+            statCard('Papers', counts.papers, '#papers')));
+    container.replaceChildren(...[
+        card,
+        labWide,
         el('div', 'home-grid',
             el('section', 'home-section',
                 sectionHead('Your projects', '#projects', 'All projects'),
@@ -53,7 +57,8 @@ async function load(container, page) {
                 myIdeas(overview.myIdeas),
                 sectionHead('Popular ideas'),
                 popularIdeas(ideas)),
-            activitySection(overview, profile)));
+            activitySection(overview, profile)),
+    ].filter(Boolean));
 }
 
 // "For you" first when something matches, so the page opens on what is relevant to this person

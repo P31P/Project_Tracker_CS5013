@@ -44,6 +44,12 @@ class ProjectApiTest extends PostgresTestBase {
     }
 
     @Test
+    void theOwnersIdComesWithTheProjectSoTheirNameCanLinkToThem() throws Exception {
+        send(post("/api/projects"), "{\"title\": \"Linked owner\"}")
+                .andExpect(jsonPath("$.ownerId").isNumber());
+    }
+
+    @Test
     void blankTitleIsRefusedWithAMessage() throws Exception {
         send(post("/api/projects"), "{\"title\": \"   \"}")
                 .andExpect(status().isBadRequest())

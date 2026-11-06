@@ -19,10 +19,10 @@ public class InterestMatches {
     /**
      * One thing that matches an interest.
      *
-     * @param kind {@code IDEA} or {@code PAPER}
+     * @param kind {@code IDEA}, {@code PROJECT} or {@code PAPER}
      * @param who who shared it, or {@code null} for a paper from Slack
      * @param action what they did, e.g. "shared an idea"
-     * @param target the title of the idea or paper
+     * @param target the title of the idea, project or paper
      * @param href a tab link such as {@code #papers/12}
      * @param interest the interest it matched, e.g. "genomics"
      * @param at when it was added
@@ -31,9 +31,10 @@ public class InterestMatches {
                         OffsetDateTime at) {
     }
 
-    // An idea matches when one of its tags is an interest. A paper matches the same way, or when an interest
-    // appears as a phrase in its title, so untagged papers from Slack show up too. Papers the person has
-    // already read are left out.
+    // An idea matches when one of its tags is an interest, and so does a project that was opened for
+    // collaboration (by when it was opened) unless the person is already on it. A paper matches the same way, or
+    // when an interest appears as a phrase in its title, so untagged papers from Slack show up too. Papers the
+    // person has already read are left out.
     private static final String SQL = """
             SELECT kind, who, action, target, href, interest, at FROM (
                 SELECT 'IDEA' AS kind, coalesce(u.name, u.email) AS who, 'shared an idea' AS action,
@@ -43,6 +44,16 @@ public class InterestMatches {
                 FROM idea i LEFT JOIN app_user u ON u.id = i.author_id
                 WHERE i.created_at > now() - make_interval(days => :days)
                   AND i.author_id IS DISTINCT FROM :me
+                UNION ALL
+                SELECT 'PROJECT', coalesce(u.name, u.email), 'opened a project for collaboration', p.title,
+                       '#projects/' || p.id,
+                       (SELECT t FROM unnest(p.tags) t WHERE t = ANY (CAST(:interests AS text[])) LIMIT 1),
+                       p.collab_opened_at
+                FROM project p LEFT JOIN app_user u ON u.id = p.owner_id
+                WHERE p.open_for_collab
+                  AND p.collab_opened_at > now() - make_interval(days => :days)
+                  AND p.owner_id IS DISTINCT FROM :me
+                  AND NOT EXISTS (SELECT 1 FROM project_member m WHERE m.project_id = p.id AND m.user_id = :me)
                 UNION ALL
                 SELECT 'PAPER', NULL, 'A paper was shared in Slack', coalesce(a.title, a.normalized_url),
                        '#papers/' || a.id,
@@ -73,8 +84,8 @@ public class InterestMatches {
     }
 
     /**
-     * Finds ideas and papers from the last 30 days that match a person's interests, newest first. Their own
-     * ideas don't count.
+     * Finds ideas, projects open for collaboration and papers from the last 30 days that match a person's
+     * interests, newest first. Their own ideas and projects don't count.
      *
      * @param user the person; may be {@code null}
      * @return up to 12 matches, or none if the person has no interests

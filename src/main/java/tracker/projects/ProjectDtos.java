@@ -156,13 +156,14 @@ public final class ProjectDtos {
      * @param voteCount how many people upvoted it
      * @param votedByMe whether the signed-in user upvoted it
      * @param commentCount how many comments its discussion has
+     * @param ownerId the id of who started it, or {@code null}
      */
     public record ProjectDetail(Long id, String title, String description, ProjectStatus status, String ownerName,
                                 List<String> tags, List<Person> members, List<LinkView> links,
                                 OffsetDateTime createdAt, OffsetDateTime updatedAt, List<TimelineEntry> timeline,
                                 LocalDate startedOn, Details details, boolean openForCollab,
                                 OffsetDateTime collabOpenedAt, List<PaperRef> papers, long voteCount,
-                                boolean votedByMe, long commentCount) {
+                                boolean votedByMe, long commentCount, Long ownerId) {
     }
 
     /**
@@ -195,11 +196,12 @@ public final class ProjectDtos {
      * @param openForCollab whether the author is looking for people to work on it with
      * @param links web links listed as references, in the order they were added
      * @param papers papers from the archive listed as references, by title
+     * @param authorId the id of who wrote it, or {@code null}
      */
     public record IdeaView(Long id, String title, String description, String authorName, List<String> tags,
                            OffsetDateTime createdAt, Long projectId, String projectTitle, int voteCount,
                            boolean votedByMe, long commentCount, Details details, boolean openForCollab,
-                           List<LinkView> links, List<PaperRef> papers) {
+                           List<LinkView> links, List<PaperRef> papers, Long authorId) {
     }
 
     /**
