@@ -12,6 +12,7 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,12 +42,13 @@ class AutoFillServiceTest {
     }
 
     private AutoFillService service(boolean enabled, Duration timeout) {
-        return new AutoFillService(new LlmClient(enabled, model.baseUrl() + "/v1", "llama3.2:3b", "", timeout));
+        return new AutoFillService(new LlmClient(enabled, model.baseUrl() + "/v1", "llama3.2:3b", "", timeout),
+                () -> List.of("Genomics", "Machine Learning"));
     }
 
     private void modelAnswers(String answer) {
         String reply = JsonMapper.builder().build().writeValueAsString(
-                Map.of("choices", java.util.List.of(Map.of("message", Map.of("role", "assistant", "content", answer)))));
+                Map.of("choices", List.of(Map.of("message", Map.of("role", "assistant", "content", answer)))));
         model.stubFor(post(urlEqualTo("/v1/chat/completions")).willReturn(okJson(reply)));
     }
 
@@ -153,5 +155,53 @@ class AutoFillServiceTest {
 
         assertThat(off.isEnabled()).isFalse();
         assertStatus(catchThrowable(() -> off.suggest("flux sampling")), 503, "Auto-fill is turned off");
+    }
+
+    @Test
+    void theWriteUpIsFilledFromAFullNote() {
+        modelAnswers("{\"title\": \"GNN flux prediction\", \"description\": \"Predict fluxes with a GNN.\","
+                + " \"tags\": [\"Machine Learning\", \"genomics\"], \"coreQuestion\": \"Can a GNN predict flux?\","
+                + " \"motivation\": \" Sampling is slow \", \"approach\": \"Train on BiGG\", \"resources\": \"GPUs\","
+                + " \"challenges\": \"Little data\"}");
+
+        AutoFillSuggestion suggestion = autoFill.suggest("gnn to predict flux, sampling is slow, train on bigg");
+
+        assertThat(suggestion.coreQuestion()).isEqualTo("Can a GNN predict flux?");
+        assertThat(suggestion.motivation()).isEqualTo("Sampling is slow");
+        assertThat(suggestion.challenges()).isEqualTo("Little data");
+        // a built-in tag comes back stored the way every tag is, which is the built-in tag's name
+        assertThat(suggestion.tags()).containsExactly("machine learning", "genomics");
+    }
+
+    @Test
+    void partsTheNoteDoesNotMentionStayEmpty() {
+        modelAnswers("{\"title\": \"Gut microbiome\", \"description\": \"\", \"tags\": [],"
+                + " \"coreQuestion\": \"\", \"motivation\": \"  \", \"approach\": 7, \"resources\": \"None mentioned\","
+                + " \"challenges\": \"N/A.\"}");
+
+        AutoFillSuggestion suggestion = autoFill.suggest("gut microbiome");
+
+        assertThat(suggestion.coreQuestion()).isNull();
+        assertThat(suggestion.motivation()).isNull();
+        assertThat(suggestion.approach()).isNull();
+        assertThat(suggestion.resources()).isNull();
+        assertThat(suggestion.challenges()).isNull();
+    }
+
+    @Test
+    void aVeryLongPartIsCut() {
+        modelAnswers("{\"title\": \"Long\", \"approach\": \"" + "a".repeat(5000) + "\"}");
+
+        assertThat(autoFill.suggest("long").approach()).hasSize(AutoFillService.MAX_PART_LENGTH);
+    }
+
+    @Test
+    void theModelIsOfferedTheLabsTags() {
+        modelAnswers("{\"title\": \"Anything\"}");
+
+        autoFill.suggest("a note");
+
+        model.verify(postRequestedFor(urlEqualTo("/v1/chat/completions"))
+                .withRequestBody(containing("Genomics, Machine Learning")));
     }
 }

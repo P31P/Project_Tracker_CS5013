@@ -2,7 +2,9 @@
 
 import { getJson, sendJson } from './api.js';
 import { suggestButton } from './autofill.js';
-import { collabBadge, collabSelect, detailFields, detailSections, detailsFrom, hasDetails } from './details.js';
+import {
+    collabBadge, collabSelect, detailFields, detailSections, detailsFrom, fillDetails, hasDetails,
+} from './details.js';
 import { discussionSection } from './discussion.js';
 import { icon } from './icons.js';
 import { markdown, markdownHint, plainText } from './markdown.js';
@@ -239,6 +241,9 @@ export async function newProjectDialog() {
         description.value = suggestion.description || '';
         tags.suggest(suggestion.tags);
         more.open = true;
+        if (fillDetails(detailed, suggestion)) {
+            detailed.open = true;
+        }
     });
     formDialog('New project', [
         field('Title', title),

@@ -3,7 +3,7 @@
 
 import { getJson, sendJson } from './api.js';
 import { suggestButton } from './autofill.js';
-import { collabBadge, detailFields, detailSections, detailsFrom, hasDetails } from './details.js';
+import { collabBadge, detailFields, detailSections, detailsFrom, fillDetails, hasDetails } from './details.js';
 import { icon } from './icons.js';
 import { markdown, markdownHint } from './markdown.js';
 import { linkForm, linkList, paperList, paperPicker } from './references.js';
@@ -40,6 +40,7 @@ function composer(onSaved) {
         title.value = suggestion.title;
         description.value = suggestion.description || '';
         tags.suggest(suggestion.tags);
+        fillDetails(more, suggestion);
         more.open = true;
     });
     const form = el('form', 'card composer composer-idea', title, more, el('div', 'composer-actions', suggest, save));

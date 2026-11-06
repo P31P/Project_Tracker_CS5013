@@ -23,6 +23,20 @@ export function detailsFrom(values) {
     return Object.fromEntries(DETAIL_PARTS.map(([key]) => [key, values['detail-' + key] || '']));
 }
 
+/** Puts suggested parts into the empty boxes inside `container`, and says whether it filled any. */
+export function fillDetails(container, suggestion) {
+    let filled = false;
+    for (const [key] of DETAIL_PARTS) {
+        const box = container.querySelector('[name="detail-' + key + '"]');
+        // what the person already wrote is never replaced
+        if (box && !box.value.trim() && suggestion[key]) {
+            box.value = suggestion[key];
+            filled = true;
+        }
+    }
+    return filled;
+}
+
 export function hasDetails(details) {
     return Boolean(details) && DETAIL_PARTS.some(([key]) => details[key]);
 }
