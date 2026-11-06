@@ -6,7 +6,9 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +39,9 @@ public class AutoFillService {
     /** Longest suggested part of the write-up; a person can always write more themselves. */
     static final int MAX_PART_LENGTH = 1000;
     static final List<String> PARTS = List.of("coreQuestion", "motivation", "approach", "resources", "challenges");
+    // what a small model writes instead of leaving a part empty
+    private static final Set<String> NOTHING = Set.of("none", "none mentioned", "not mentioned", "not specified", "n/a",
+            "na", "unknown");
 
     private static final Map<String, Object> STRING = Map.of("type", "string");
     private static final Map<String, Object> SCHEMA = Map.of(
@@ -162,10 +167,13 @@ public class AutoFillService {
                 parts.get(3), parts.get(4));
     }
 
-    // one part of the write-up, cut to a sensible length; null if the model left it out or empty
+    // one part of the write-up, cut to a sensible length; null if the model left it out, empty or "None mentioned"
     private static String part(JsonNode field) {
         String text = text(field);
-        return text == null || text.length() <= MAX_PART_LENGTH ? text : text.substring(0, MAX_PART_LENGTH).strip();
+        if (text == null || NOTHING.contains(text.toLowerCase(Locale.ROOT).replaceAll("[.!]+$", ""))) {
+            return null;
+        }
+        return text.length() <= MAX_PART_LENGTH ? text : text.substring(0, MAX_PART_LENGTH).strip();
     }
 
     // a string field's trimmed text, or null if it is missing, not a string, or blank
