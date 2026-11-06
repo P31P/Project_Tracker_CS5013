@@ -48,6 +48,10 @@ class ProfileApiTest extends PostgresTestBase {
     @Test
     void theProfileSaysWhoManagesAccess() throws Exception {
         mvc.perform(get("/api/profile").with(PRIYAL)).andExpect(jsonPath("$.role").value("LAB_MANAGER"));
+        // Home shows the lab-wide numbers to the admin
+        mvc.perform(get("/api/profile")
+                        .with(oidcLogin().idToken(token -> token.claim("email", "da24b026@smail.iitm.ac.in"))))
+                .andExpect(jsonPath("$.role").value("ADMIN"));
     }
 
     @Test
