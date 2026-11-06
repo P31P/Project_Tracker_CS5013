@@ -10,7 +10,7 @@ import { avatar, button, el, field, formDialog, input, splitTags, tagList, texta
  * and onSaved receives the profile after it is saved.
  */
 export function profileCard(profile, onSaved) {
-    loadStylesheet();
+    loadProfileStyles();
     const empty = !profile.bio && !profile.background && profile.interests.length === 0;
     const edit = onSaved && button(['edit', empty ? 'Fill in your profile' : 'Edit profile'],
         empty ? 'button' : 'button button-secondary', () => editProfileDialog(profile, onSaved));
@@ -54,7 +54,8 @@ function editProfileDialog(profile, onSaved) {
     });
 }
 
-function loadStylesheet() {
+/** Loads profile.css, which also styles the People tab. */
+export function loadProfileStyles() {
     if (document.getElementById('profile-css')) {
         return;
     }
