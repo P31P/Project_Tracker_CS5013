@@ -84,7 +84,25 @@ public final class ProjectDtos {
     }
 
     /**
-     * A link on a project.
+     * A paper from the archive to list as a reference.
+     *
+     * @param paperId the paper's id
+     */
+    public record PaperRequest(Long paperId) {
+    }
+
+    /**
+     * A paper from the archive listed as a reference.
+     *
+     * @param id the paper's id
+     * @param title its title, or its address until the details are found
+     * @param url its address
+     */
+    public record PaperRef(Long id, String title, String url) {
+    }
+
+    /**
+     * A link on a project or an idea.
      *
      * @param id the link's id
      * @param label the text to show
@@ -108,11 +126,12 @@ public final class ProjectDtos {
      * @param updateCount how many entries its timeline has
      * @param startedOn the start date
      * @param openForCollab whether others can ask to join
+     * @param voteCount how many people upvoted it
      */
     public record ProjectSummary(Long id, String title, String description, ProjectStatus status, String ownerName,
                                  List<String> tags, List<Person> members, OffsetDateTime createdAt,
                                  OffsetDateTime updatedAt, long updateCount, LocalDate startedOn,
-                                 boolean openForCollab) {
+                                 boolean openForCollab, long voteCount) {
     }
 
     /**
@@ -133,12 +152,17 @@ public final class ProjectDtos {
      * @param details the longer write-up
      * @param openForCollab whether others can ask to join
      * @param collabOpenedAt when it was opened for collaboration, or {@code null} if it isn't open
+     * @param papers papers from the archive listed as references, by title
+     * @param voteCount how many people upvoted it
+     * @param votedByMe whether the signed-in user upvoted it
+     * @param commentCount how many comments its discussion has
      */
     public record ProjectDetail(Long id, String title, String description, ProjectStatus status, String ownerName,
                                 List<String> tags, List<Person> members, List<LinkView> links,
                                 OffsetDateTime createdAt, OffsetDateTime updatedAt, List<TimelineEntry> timeline,
                                 LocalDate startedOn, Details details, boolean openForCollab,
-                                OffsetDateTime collabOpenedAt) {
+                                OffsetDateTime collabOpenedAt, List<PaperRef> papers, long voteCount,
+                                boolean votedByMe, long commentCount) {
     }
 
     /**
@@ -169,14 +193,17 @@ public final class ProjectDtos {
      * @param commentCount how many comments its discussion has
      * @param details the longer write-up
      * @param openForCollab whether the author is looking for people to work on it with
+     * @param links web links listed as references, in the order they were added
+     * @param papers papers from the archive listed as references, by title
      */
     public record IdeaView(Long id, String title, String description, String authorName, List<String> tags,
                            OffsetDateTime createdAt, Long projectId, String projectTitle, int voteCount,
-                           boolean votedByMe, long commentCount, Details details, boolean openForCollab) {
+                           boolean votedByMe, long commentCount, Details details, boolean openForCollab,
+                           List<LinkView> links, List<PaperRef> papers) {
     }
 
     /**
-     * A comment to add to an idea's discussion.
+     * A comment to add to a project's or an idea's discussion.
      *
      * @param body the comment; must not be blank
      */
@@ -184,7 +211,7 @@ public final class ProjectDtos {
     }
 
     /**
-     * A comment in an idea's discussion.
+     * A comment in a project's or an idea's discussion.
      *
      * @param id the comment's id
      * @param body the text

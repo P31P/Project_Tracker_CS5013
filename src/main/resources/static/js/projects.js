@@ -3,8 +3,10 @@
 import { getJson, sendJson } from './api.js';
 import { suggestButton } from './autofill.js';
 import { collabBadge, collabSelect, detailFields, detailSections, detailsFrom, hasDetails } from './details.js';
+import { discussionSection } from './discussion.js';
 import { icon } from './icons.js';
 import { markdown, markdownHint, plainText } from './markdown.js';
+import { linkForm, linkList, paperList, paperPicker } from './references.js';
 import { tagPicker } from './tags.js';
 import {
     avatar, avatarStack, button, el, emptyState, errorState, field, filterChips, formDialog, input, relativeTime,
@@ -117,7 +119,8 @@ function projectCard(project, pickTag, index = 0) {
         tagList(project.tags, pickTag),
         el('div', 'card-foot',
             avatarStack(project.members),
-            el('span', 'card-meta-inline', icon('message', 14), String(project.updateCount),
+            el('span', 'card-meta-inline', icon('up', 14), String(project.voteCount),
+                icon('message', 14), String(project.updateCount),
                 el('span', null, '· updated ' + relativeTime(project.updatedAt)))));
     card.style.setProperty('--i', Math.min(index, 10));
     return card;
@@ -316,18 +319,22 @@ async function renderProject(container, page, id) {
         project = updated;
         draw();
     };
+    // made once, so redrawing after a vote or a new link doesn't reload the comments or lose a half-typed one
+    const discussion = discussionSection('/api/projects/' + project.id);
     const draw = () => {
         page.heading.textContent = project.title;
         document.title = project.title + ' · Raman Lab Tracker';
         page.description.replaceChildren(backLink(), statusChip(project.status),
             el('span', 'muted', [project.ownerName && 'Owned by ' + project.ownerName,
                 'started ' + relativeTime(project.createdAt)].filter(Boolean).join(' · ')));
-        page.actions.replaceChildren(button(['edit', 'Edit'], 'button button-secondary', () => editDialog(project, redraw)));
+        page.actions.replaceChildren(voteButton(project, redraw),
+            button(['edit', 'Edit'], 'button button-secondary', () => editDialog(project, redraw)));
         const about = project.description && el('div', 'card', markdown(project.description));
         const write = hasDetails(project.details) && el('div', 'card detail-parts', ...detailSections(project.details));
         container.replaceChildren(el('div', 'detail-layout',
             el('div', 'detail-main', about, write, composer(project, redraw),
-                el('h2', 'section-title', 'Timeline'), timeline(project.timeline)),
+                el('h2', 'section-title', 'Timeline'), timeline(project.timeline),
+                el('h2', 'section-title', 'Discussion'), discussion),
             el('aside', 'card detail-side', ...sidePanel(project, redraw))));
     };
     draw();
@@ -344,6 +351,7 @@ function sideSection(title, ...children) {
 }
 
 function sidePanel(project, redraw) {
+    const base = '/api/projects/' + project.id;
     return [
         sideSection('Status', statusPicker(project, redraw)),
         sideSection('Started', el('p', 'side-text', formatDay(project.startedOn))),
@@ -354,8 +362,24 @@ function sidePanel(project, redraw) {
                 el('li', 'person', avatar(person.name), el('span', null, person.name))))
             : el('p', 'muted side-empty', 'No members yet.')),
         sideSection('Tags', tagList(project.tags) || el('p', 'muted side-empty', 'No tags yet. Add some with Edit.')),
-        sideSection('Links', linkList(project, redraw), linkForm(project, redraw)),
+        sideSection('Links', linkList(project, base, redraw), linkForm(base, redraw)),
+        sideSection('Papers', paperList(project, base, redraw), paperPicker(project, base, redraw)),
     ];
+}
+
+function voteButton(project, redraw) {
+    const vote = button(['up', (project.votedByMe ? 'Upvoted' : 'Upvote') + ' · ' + project.voteCount],
+        'button button-secondary', async () => {
+            vote.disabled = true;
+            try {
+                redraw(await sendJson(project.votedByMe ? 'DELETE' : 'PUT', '/api/projects/' + project.id + '/vote'));
+            } catch (problem) {
+                toast(problem.message, 'error');
+                vote.disabled = false;
+            }
+        });
+    vote.setAttribute('aria-pressed', String(project.votedByMe));
+    return vote;
 }
 
 function statusPicker(project, redraw) {
@@ -371,56 +395,6 @@ function statusPicker(project, redraw) {
         }
     });
     return picker;
-}
-
-function linkList(project, redraw) {
-    if (project.links.length === 0) {
-        return el('p', 'muted side-empty', 'Repos, docs, slides or datasets.');
-    }
-    return el('ul', 'links', ...project.links.map(link => {
-        const anchor = el('a', 'link-item', icon('external', 14), el('span', 'link-label', link.label));
-        // the server only stores http(s) links; checked again so nothing else ever becomes a href
-        if (/^https?:\/\//i.test(link.url)) {
-            anchor.href = link.url;
-        }
-        anchor.target = '_blank';
-        anchor.rel = 'noopener noreferrer';
-        anchor.title = link.url;
-        const remove = button(icon('close', 14), 'icon-button', async () => {
-            try {
-                redraw(await sendJson('DELETE', '/api/projects/' + project.id + '/links/' + link.id));
-                toast('Link removed');
-            } catch (problem) {
-                toast(problem.message, 'error');
-            }
-        });
-        remove.setAttribute('aria-label', 'Remove ' + link.label);
-        return el('li', 'link-row', anchor, remove);
-    }));
-}
-
-function linkForm(project, redraw) {
-    const url = input('url', { placeholder: 'Paste a link', required: true });
-    url.setAttribute('aria-label', 'Link URL');
-    const label = input('label', { placeholder: 'Name (optional)' });
-    label.setAttribute('aria-label', 'Link name');
-    const add = el('button', 'button button-secondary button-small', icon('plus', 16), 'Add link');
-    add.type = 'submit';
-    const form = el('form', 'link-form', url, label, add);
-    form.addEventListener('submit', async event => {
-        event.preventDefault();
-        add.disabled = true;
-        // "github.com/lab/repo" is taken to mean https://github.com/lab/repo
-        const address = /^[a-z]+:/i.test(url.value.trim()) ? url.value.trim() : 'https://' + url.value.trim();
-        try {
-            redraw(await sendJson('POST', '/api/projects/' + project.id + '/links', { label: label.value, url: address }));
-            toast('Link added');
-        } catch (problem) {
-            toast(problem.message, 'error');
-            add.disabled = false;
-        }
-    });
-    return form;
 }
 
 function composer(project, redraw) {

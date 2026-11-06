@@ -12,7 +12,7 @@ public interface IdeaRepository extends JpaRepository<Idea, Long> {
      *
      * @return all ideas
      */
-    @EntityGraph(attributePaths = {"author", "project", "voters"})
+    @EntityGraph(attributePaths = {"author", "project", "voters", "papers"})
     List<Idea> findAllByOrderByCreatedAtDescIdDesc();
 
     /**

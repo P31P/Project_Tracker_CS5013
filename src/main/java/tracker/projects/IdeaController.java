@@ -18,6 +18,8 @@ import tracker.projects.ProjectDtos.CommentRequest;
 import tracker.projects.ProjectDtos.CommentView;
 import tracker.projects.ProjectDtos.IdeaRequest;
 import tracker.projects.ProjectDtos.IdeaView;
+import tracker.projects.ProjectDtos.LinkRequest;
+import tracker.projects.ProjectDtos.PaperRequest;
 import tracker.projects.ProjectDtos.ProjectDetail;
 
 /** The ideas API under {@code /api/ideas}. Errors come back as {@code {"error": "..."}}. */
@@ -98,6 +100,64 @@ public class IdeaController {
     @ResponseStatus(HttpStatus.CREATED)
     public ProjectDetail promote(@PathVariable Long id, @AuthenticationPrincipal OidcUser user) {
         return ideas.promote(id, currentUser.of(user));
+    }
+
+    /**
+     * Adds a web link to an idea's references. Handles {@code POST /api/ideas/{id}/links} and answers {@code 201}.
+     *
+     * @param id the idea's id
+     * @param request the link
+     * @param user the signed-in user
+     * @return the idea with the new link
+     */
+    @PostMapping("/{id}/links")
+    @ResponseStatus(HttpStatus.CREATED)
+    public IdeaView addLink(@PathVariable Long id, @RequestBody LinkRequest request,
+                            @AuthenticationPrincipal OidcUser user) {
+        return ideas.addLink(id, request, currentUser.of(user));
+    }
+
+    /**
+     * Removes a web link from an idea. Handles {@code DELETE /api/ideas/{id}/links/{linkId}}.
+     *
+     * @param id the idea's id
+     * @param linkId the link's id
+     * @param user the signed-in user
+     * @return the idea without the link
+     */
+    @DeleteMapping("/{id}/links/{linkId}")
+    public IdeaView removeLink(@PathVariable Long id, @PathVariable Long linkId, @AuthenticationPrincipal OidcUser user) {
+        return ideas.removeLink(id, linkId, currentUser.of(user));
+    }
+
+    /**
+     * Lists a paper from the archive as a reference. Handles {@code POST /api/ideas/{id}/papers} and answers
+     * {@code 201}.
+     *
+     * @param id the idea's id
+     * @param request the paper
+     * @param user the signed-in user
+     * @return the idea with the paper
+     */
+    @PostMapping("/{id}/papers")
+    @ResponseStatus(HttpStatus.CREATED)
+    public IdeaView addPaper(@PathVariable Long id, @RequestBody PaperRequest request,
+                             @AuthenticationPrincipal OidcUser user) {
+        return ideas.addPaper(id, request.paperId(), currentUser.of(user));
+    }
+
+    /**
+     * Takes a paper off an idea's references. Handles {@code DELETE /api/ideas/{id}/papers/{paperId}}.
+     *
+     * @param id the idea's id
+     * @param paperId the paper's id
+     * @param user the signed-in user
+     * @return the idea without the paper
+     */
+    @DeleteMapping("/{id}/papers/{paperId}")
+    public IdeaView removePaper(@PathVariable Long id, @PathVariable Long paperId,
+                                @AuthenticationPrincipal OidcUser user) {
+        return ideas.removePaper(id, paperId, currentUser.of(user));
     }
 
     /**
