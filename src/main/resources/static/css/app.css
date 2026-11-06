@@ -168,6 +168,11 @@ a {
     overflow-x: auto;
 }
 
+/* a page with no button in the tab bar, such as Manage access */
+.tab[hidden] {
+    display: none;
+}
+
 .tab {
     display: inline-flex;
     align-items: center;
@@ -1473,6 +1478,52 @@ button.tag {
     color: var(--muted);
     font-size: 0.85rem;
     overflow-wrap: anywhere;
+}
+
+.access-note {
+    margin: 0 0 1rem;
+}
+
+.access-list {
+    display: grid;
+    padding: 0.25rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.access-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.75rem 0;
+}
+
+.access-row + .access-row {
+    border-top: 1px solid var(--border);
+}
+
+.access-who {
+    flex: 1;
+    min-width: 12rem;
+}
+
+.access-name,
+.access-email {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.access-name {
+    font-weight: 600;
+}
+
+.access-email {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.access-row .input {
+    width: auto;
 }
 
 .member-option {

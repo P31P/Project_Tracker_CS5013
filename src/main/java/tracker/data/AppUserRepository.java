@@ -21,4 +21,11 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
      * @return the allowlisted users
      */
     List<AppUser> findByAllowlistedTrueOrderByNameAscEmailAsc();
+
+    /**
+     * Lists everyone who has ever been given access, for the Manage access page.
+     *
+     * @return all users, by name
+     */
+    List<AppUser> findAllByOrderByNameAscEmailAsc();
 }

@@ -16,7 +16,8 @@ Then open http://localhost:8080. For demo data on a local database (16 projects,
 
 ## API
 Signed-out API calls get `401`; pages redirect to the sign-in page (`/login.html`).
-- `GET /api/me`: email and name of the signed-in user
+- `GET /api/me`: email, name and `role` (`MEMBER`, `LAB_MANAGER` or `ADMIN`) of the signed-in user
+- `GET /api/access`, `POST /api/access` (`email` required; `name`, `role` optional, and leaving `role` out keeps a known person's role), `PATCH /api/access/{id}` (`role` and/or `allowlisted`): **Manage access**, for Lab Managers and admins only (`403` for anyone else). Nobody can change their own access, and only an admin can make or change an admin. Someone whose access is removed is signed out on their next request
 - `GET /api/papers`: list all archived papers with title, authors, date and who first shared them in Slack (optional `?status=PENDING|RESOLVED|UNRESOLVED`)
 - `GET /api/papers/{id}`: single paper
 - `PATCH /api/papers/{id}`: correct a paper's details (`title` required; `authors`, `publishedOn` and `doi` replace what is stored). Marks it `RESOLVED` with source `MANUAL`. In the Papers tab, open a paper's **Details** and use **Fix details**

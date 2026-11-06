@@ -1,3 +1,4 @@
+import { renderAccess } from './access.js';
 import { getJson, signOut } from './api.js';
 import { renderHome } from './home.js';
 import { icon } from './icons.js';
@@ -55,6 +56,7 @@ async function showUser() {
         avatar.style.setProperty('--hue', hueOf(name));
         document.getElementById('user-name').textContent = name;
         document.getElementById('user-email').textContent = me.email;
+        document.getElementById('manage-access').hidden = !(me.role === 'LAB_MANAGER' || me.role === 'ADMIN');
     } catch (error) {
         // only the account menu needs this; the tabs work without it
     }
@@ -76,6 +78,9 @@ registerTab('papers', 'Papers', renderPapers, 'Papers shared in Slack, with thei
 registerTab('people', 'People', renderPeople, 'Who is in the lab, their background, and what they are interested in.', 'users');
 registerTab('search', 'Search', renderSearch, 'Find projects, ideas and papers, and narrow them down by tags, person or date.', 'search');
 initSearchShortcut();
+// Manage access opens from the account menu, so it has no button in the tab bar
+registerTab('access', 'Manage access', renderAccess, 'Who can sign in, and what they may do.', 'users');
+document.getElementById('tab-access').hidden = true;
 
 window.addEventListener('hashchange', showTab);
 showTab();

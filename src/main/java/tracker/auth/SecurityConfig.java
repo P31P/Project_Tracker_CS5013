@@ -13,10 +13,12 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.AnyRequestMatcher;
+import tracker.data.AppUserRepository;
 
 /**
  * Web security: Google sign-in limited to the allowlist, CSRF protection for the API, and sign-out.
@@ -33,11 +35,12 @@ public class SecurityConfig {
      * Builds the security rules for every request.
      *
      * @param http Spring Security's builder
+     * @param users where users are stored, to sign out anyone whose access was removed
      * @return the filter chain that applies the rules
      * @throws Exception if Spring Security cannot build the chain
      */
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, AppUserRepository users) throws Exception {
         http
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers(LOGIN_PAGE, "/css/**", "/fonts/**").permitAll()
@@ -54,6 +57,8 @@ public class SecurityConfig {
                     }
                     chain.doFilter(request, response);
                 }, CsrfFilter.class)
+                // someone whose access was removed is signed out on their next request
+                .addFilterAfter(new AccessCheckFilter(users), SecurityContextHolderFilter.class)
                 // pages redirect to the sign-in page, but the API answers 401 so the page's JavaScript can react
                 .exceptionHandling(errors -> errors
                         .defaultAuthenticationEntryPointFor(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
