@@ -1,0 +1,71 @@
+.profile-card {
+    margin-bottom: 1.5rem;
+}
+
+.profile-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+}
+
+.avatar-profile {
+    width: 3.25rem;
+    height: 3.25rem;
+    font-size: 1.05rem;
+}
+
+.profile-who {
+    flex: 1;
+    min-width: 12rem;
+}
+
+.profile-name {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.profile-background,
+.profile-email {
+    margin: 0.15rem 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+}
+
+.profile-bio {
+    margin-top: 0.9rem;
+}
+
+.profile-bio > :first-child {
+    margin-top: 0;
+}
+
+.profile-bio > :last-child {
+    margin-bottom: 0;
+}
+
+.profile-interests {
+    margin-top: 0.9rem;
+}
+
+.profile-label {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.profile-interests .tag-list {
+    margin-top: 0.35rem;
+}
+
+.feed-match {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0.2rem 0 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
