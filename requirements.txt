@@ -8,6 +8,7 @@ postgresql      >= 16
 git             >= 2.30
 maven           >= 3.8
 ollama          >= 0.5   # optional, for auto-fill; then: ollama pull llama3.2:3b
+docker          >= 24    # optional, only to build or run the demo image
 
 # Libraries
 spring-boot                     == 4.1.1
