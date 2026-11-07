@@ -34,7 +34,8 @@ import tracker.support.PostgresTestBase;
 class SeedDataTest extends PostgresTestBase {
 
     private static final List<String> TABLES = List.of("app_user", "project", "project_member", "project_link",
-            "project_update", "idea", "idea_vote", "idea_comment");
+            "project_update", "idea", "idea_vote", "idea_comment", "slack_message", "paper", "paper_share",
+            "paper_vote", "project_paper", "idea_paper");
 
     // allowlisted by V3 and the owner of several seeded projects
     private static final RequestPostProcessor TEAM_MEMBER = oidcLogin().idToken(token -> token
@@ -58,9 +59,12 @@ class SeedDataTest extends PostgresTestBase {
 
         Map<String, Integer> added = new LinkedHashMap<>();
         counts().forEach((table, count) -> added.put(table, count - before.get(table)));
-        assertThat(added).isEqualTo(Map.of(
-                "app_user", 4, "project", 16, "project_member", 28, "project_link", 5,
-                "project_update", 12, "idea", 12, "idea_vote", 15, "idea_comment", 5));
+        assertThat(added).isEqualTo(Map.ofEntries(
+                Map.entry("app_user", 4), Map.entry("project", 16), Map.entry("project_member", 28),
+                Map.entry("project_link", 5), Map.entry("project_update", 12), Map.entry("idea", 12),
+                Map.entry("idea_vote", 15), Map.entry("idea_comment", 5), Map.entry("slack_message", 8),
+                Map.entry("paper", 8), Map.entry("paper_share", 8), Map.entry("paper_vote", 7),
+                Map.entry("project_paper", 7), Map.entry("idea_paper", 2)));
     }
 
     @Test
@@ -74,6 +78,10 @@ class SeedDataTest extends PostgresTestBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.type == 'PROJECT')]").isNotEmpty())
                 .andExpect(jsonPath("$[?(@.type == 'IDEA')]").isNotEmpty());
+        mvc.perform(get("/api/papers").with(TEAM_MEMBER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.title == 'What is flux balance analysis?')].sharedBy").value("Ananya Rao"))
+                .andExpect(jsonPath("$[?(@.title == 'What is flux balance analysis?')].status").value("RESOLVED"));
     }
 
     @Test
