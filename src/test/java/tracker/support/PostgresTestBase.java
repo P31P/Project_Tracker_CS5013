@@ -7,8 +7,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
-// the paper worker would call Crossref and arXiv for real, so it is off unless a test turns it on
-@SpringBootTest(properties = "papers.resolution-enabled=false")
+// the paper worker would call Crossref and arXiv for real, so it is off unless a test turns it on; the app also
+// imports a developer's .env, so the language model and Slack are pinned off too, whatever that file says
+@SpringBootTest(properties = {"papers.resolution-enabled=false", "llm.enabled=false",
+        "slack.socket-mode-enabled=false"})
 public abstract class PostgresTestBase {
 
     private static final EmbeddedPostgres POSTGRES = start();

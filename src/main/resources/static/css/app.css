@@ -80,6 +80,11 @@
     box-sizing: border-box;
 }
 
+/* the hidden attribute always hides, even where a class sets display, as .button and .tab do */
+[hidden] {
+    display: none !important;
+}
+
 body {
     margin: 0;
     background: var(--bg);
@@ -166,11 +171,6 @@ a {
     align-self: stretch;
     gap: 0.25rem;
     overflow-x: auto;
-}
-
-/* a page with no button in the tab bar, such as Manage access */
-.tab[hidden] {
-    display: none;
 }
 
 .tab {
