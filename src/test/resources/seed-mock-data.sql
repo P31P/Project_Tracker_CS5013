@@ -1,4 +1,4 @@
--- Mock projects and ideas for demos and local testing. Never run this on the lab's real database.
+-- Mock projects, ideas and papers for demos and local testing. Never run this on the lab's real database.
 -- Load it in one transaction, so a failure leaves nothing behind:
 --   psql -U tracker -d tracker -1 -v ON_ERROR_STOP=1 -f src/test/resources/seed-mock-data.sql
 -- Running it a second time fails on the first insert (the emails are unique) and changes nothing.
@@ -215,3 +215,94 @@ FROM (VALUES
 ) AS c(title, email, body, posted)
 JOIN idea i ON i.title = c.title
 JOIN app_user u ON u.email = c.email;
+
+-- Papers shared in the lab's Slack, with the details Crossref and arXiv give for them, as if the worker had
+-- already looked them up. The link as posted is kept on the share; the paper holds the normalised one.
+INSERT INTO slack_message (channel_id, message_ts, slack_user_id, slack_user_name, text, received_at) VALUES
+    ('C0LABPAPERS', '1730000000.000100', 'U0MOCK000', 'Ananya Rao', '<@U0TRACKER> Good primer before the sampler benchmark https://www.nature.com/articles/nbt.1614', now() - interval '58 days'),
+    ('C0LABPAPERS', '1730000001.000100', 'U0MOCK001', 'Vikram Iyer', '<@U0TRACKER> The cobrapy paper, for anyone new to it https://bmcsystbiol.biomedcentral.com/articles/10.1186/1752-0509-7-74', now() - interval '51 days'),
+    ('C0LABPAPERS', '1730000002.000100', 'U0MOCK002', 'Meera Krishnan', '<@U0TRACKER> iJO1366, useful as a reference for the curation guidelines https://doi.org/10.1038/msb.2011.65', now() - interval '44 days'),
+    ('C0LABPAPERS', '1730000003.000100', 'U0MOCK003', 'Ananya Rao', '<@U0TRACKER> COBRA Toolbox protocol, the thermodynamics section is relevant https://www.nature.com/articles/nprot.2011.308', now() - interval '37 days'),
+    ('C0LABPAPERS', '1730000004.000100', 'U0MOCK004', 'Arjun Menon', '<@U0TRACKER> GCN paper for the graph ML reading group https://arxiv.org/pdf/1609.02907v4', now() - interval '30 days'),
+    ('C0LABPAPERS', '1730000005.000100', 'U0MOCK005', 'Priyal Patel', '<@U0TRACKER> Background for the protein language model project https://arxiv.org/abs/1706.03762v7', now() - interval '21 days'),
+    ('C0LABPAPERS', '1730000006.000100', 'U0MOCK006', 'Arjun Menon', '<@U0TRACKER> AlphaFold, in case we need structures for the enzyme work https://www.nature.com/articles/s41586-021-03819-2', now() - interval '12 days'),
+    ('C0LABPAPERS', '1730000007.000100', 'U0MOCK007', 'Sujal Jayant Kumar', '<@U0TRACKER> BERT, since a few people asked https://arxiv.org/abs/1810.04805', now() - interval '4 days');
+
+INSERT INTO paper (normalized_url, status, title, authors, published_on, doi, source, tags, created_at) VALUES
+    ('https://doi.org/10.1038/nbt.1614', 'RESOLVED', 'What is flux balance analysis?',
+     ARRAY['Jeffrey D Orth', 'Ines Thiele', 'Bernhard Ø Palsson']::text[],
+     DATE '2010-03-01', '10.1038/nbt.1614', 'REGISTRY', ARRAY['metabolic modeling', 'constraint-based modeling']::text[], now() - interval '58 days'),
+    ('https://doi.org/10.1186/1752-0509-7-74', 'RESOLVED', 'COBRApy: COnstraints-Based Reconstruction and Analysis for Python',
+     ARRAY['Ali Ebrahim', 'Joshua A Lerman', 'Bernhard O Palsson', 'Daniel R Hyduke']::text[],
+     DATE '2013-08-08', '10.1186/1752-0509-7-74', 'REGISTRY', ARRAY['constraint-based modeling', 'open source']::text[], now() - interval '51 days'),
+    ('https://doi.org/10.1038/msb.2011.65', 'RESOLVED', 'A comprehensive genome‐scale reconstruction of Escherichia coli metabolism—2011',
+     ARRAY['Jeffrey D Orth', 'Tom M Conrad', 'Jessica Na', 'Joshua A Lerman', 'Hojung Nam', 'Adam M Feist', 'Bernhard Ø Palsson']::text[],
+     DATE '2011-10-11', '10.1038/msb.2011.65', 'REGISTRY', ARRAY['metabolic network reconstruction', 'metabolic modeling']::text[], now() - interval '44 days'),
+    ('https://doi.org/10.1038/nprot.2011.308', 'RESOLVED', 'Quantitative prediction of cellular metabolism with constraint-based models: the COBRA Toolbox v2.0',
+     ARRAY['Jan Schellenberger', 'Richard Que', 'Ronan M T Fleming', 'Ines Thiele', 'Jeffrey D Orth', 'Adam M Feist', 'Daniel C Zielinski', 'Aarash Bordbar', 'Nathan E Lewis', 'Sorena Rahmanian', 'Joseph Kang', 'Daniel R Hyduke', 'Bernhard Ø Palsson']::text[],
+     DATE '2011-08-04', '10.1038/nprot.2011.308', 'REGISTRY', ARRAY['constraint-based modeling']::text[], now() - interval '37 days'),
+    ('https://arxiv.org/abs/1609.02907', 'RESOLVED', 'Semi-Supervised Classification with Graph Convolutional Networks',
+     ARRAY['Thomas N. Kipf', 'Max Welling']::text[],
+     DATE '2016-09-09', NULL, 'REGISTRY', ARRAY['machine learning', 'network analysis']::text[], now() - interval '30 days'),
+    ('https://arxiv.org/abs/1706.03762', 'RESOLVED', 'Attention Is All You Need',
+     ARRAY['Ashish Vaswani', 'Noam Shazeer', 'Niki Parmar', 'Jakob Uszkoreit', 'Llion Jones', 'Aidan N. Gomez', 'Lukasz Kaiser', 'Illia Polosukhin']::text[],
+     DATE '2017-06-12', NULL, 'REGISTRY', ARRAY['deep learning']::text[], now() - interval '21 days'),
+    ('https://doi.org/10.1038/s41586-021-03819-2', 'RESOLVED', 'Highly accurate protein structure prediction with AlphaFold',
+     ARRAY['John Jumper', 'Richard Evans', 'Alexander Pritzel', 'Tim Green', 'Michael Figurnov', 'Olaf Ronneberger', 'Kathryn Tunyasuvunakool', 'Russ Bates', 'Augustin Žídek', 'Anna Potapenko', 'Alex Bridgland', 'Clemens Meyer', 'Simon A. A. Kohl', 'Andrew J. Ballard', 'Andrew Cowie', 'Bernardino Romera-Paredes', 'Stanislav Nikolov', 'Rishub Jain', 'Jonas Adler', 'Trevor Back', 'Stig Petersen', 'David Reiman', 'Ellen Clancy', 'Michal Zielinski', 'Martin Steinegger', 'Michalina Pacholska', 'Tamas Berghammer', 'Sebastian Bodenstein', 'David Silver', 'Oriol Vinyals', 'Andrew W. Senior', 'Koray Kavukcuoglu', 'Pushmeet Kohli', 'Demis Hassabis']::text[],
+     DATE '2021-07-15', '10.1038/s41586-021-03819-2', 'REGISTRY', ARRAY['deep learning', 'bioinformatics']::text[], now() - interval '12 days'),
+    ('https://arxiv.org/abs/1810.04805', 'RESOLVED', 'BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding',
+     ARRAY['Jacob Devlin', 'Ming-Wei Chang', 'Kenton Lee', 'Kristina Toutanova']::text[],
+     DATE '2018-10-11', NULL, 'REGISTRY', '{}', now() - interval '4 days');
+
+INSERT INTO paper_share (paper_id, slack_message_id, posted_url)
+SELECT p.id, m.id, v.posted
+FROM (VALUES
+    ('1730000000.000100', 'https://doi.org/10.1038/nbt.1614', 'https://www.nature.com/articles/nbt.1614'),
+    ('1730000001.000100', 'https://doi.org/10.1186/1752-0509-7-74', 'https://bmcsystbiol.biomedcentral.com/articles/10.1186/1752-0509-7-74'),
+    ('1730000002.000100', 'https://doi.org/10.1038/msb.2011.65', 'https://doi.org/10.1038/msb.2011.65'),
+    ('1730000003.000100', 'https://doi.org/10.1038/nprot.2011.308', 'https://www.nature.com/articles/nprot.2011.308'),
+    ('1730000004.000100', 'https://arxiv.org/abs/1609.02907', 'https://arxiv.org/pdf/1609.02907v4'),
+    ('1730000005.000100', 'https://arxiv.org/abs/1706.03762', 'https://arxiv.org/abs/1706.03762v7'),
+    ('1730000006.000100', 'https://doi.org/10.1038/s41586-021-03819-2', 'https://www.nature.com/articles/s41586-021-03819-2'),
+    ('1730000007.000100', 'https://arxiv.org/abs/1810.04805', 'https://arxiv.org/abs/1810.04805')
+) AS v(message_ts, url, posted)
+JOIN slack_message m ON m.channel_id = 'C0LABPAPERS' AND m.message_ts = v.message_ts
+JOIN paper p ON p.normalized_url = v.url;
+
+INSERT INTO paper_vote (paper_id, user_id)
+SELECT p.id, u.id
+FROM (VALUES
+    ('https://doi.org/10.1038/nbt.1614', 'ananya.rao@example.com'),
+    ('https://doi.org/10.1038/nbt.1614', 'vikram.iyer@example.com'),
+    ('https://doi.org/10.1038/nbt.1614', 'da24b026@smail.iitm.ac.in'),
+    ('https://doi.org/10.1186/1752-0509-7-74', 'meera.krishnan@example.com'),
+    ('https://arxiv.org/abs/1609.02907', 'cs24b047@smail.iitm.ac.in'),
+    ('https://arxiv.org/abs/1609.02907', 'arjun.menon@example.com'),
+    ('https://doi.org/10.1038/s41586-021-03819-2', 'vikram.iyer@example.com')
+) AS v(url, email)
+JOIN paper p ON p.normalized_url = v.url
+JOIN app_user u ON u.email = v.email;
+
+-- papers listed as references on projects and ideas
+INSERT INTO project_paper (project_id, paper_id)
+SELECT pr.id, p.id
+FROM (VALUES
+    ('Flux sampling benchmark on genome-scale models', 'https://doi.org/10.1038/nbt.1614'),
+    ('Flux sampling benchmark on genome-scale models', 'https://doi.org/10.1186/1752-0509-7-74'),
+    ('Thermodynamic constraints for flux analysis', 'https://doi.org/10.1038/nprot.2011.308'),
+    ('Model curation guidelines', 'https://doi.org/10.1038/msb.2011.65'),
+    ('Graph neural networks for metabolic pathways', 'https://arxiv.org/abs/1609.02907'),
+    ('Protein language models for enzyme function', 'https://arxiv.org/abs/1706.03762'),
+    ('Protein language models for enzyme function', 'https://doi.org/10.1038/s41586-021-03819-2')
+) AS r(title, url)
+JOIN project pr ON pr.title = r.title
+JOIN paper p ON p.normalized_url = r.url;
+
+INSERT INTO idea_paper (idea_id, paper_id)
+SELECT i.id, p.id
+FROM (VALUES
+    ('Reading group on graph ML', 'https://arxiv.org/abs/1609.02907'),
+    ('Benchmark samplers on community models', 'https://doi.org/10.1038/nbt.1614')
+) AS r(title, url)
+JOIN idea i ON i.title = r.title
+JOIN paper p ON p.normalized_url = r.url;

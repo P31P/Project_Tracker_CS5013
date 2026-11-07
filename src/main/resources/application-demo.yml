@@ -1,0 +1,13 @@
+# Demo mode (the Docker image): graders sign in as the demo user, so Google sign-in needs no real client.
+# Slack and auto-fill stay off unless their variables are passed to `docker run`.
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:not-used-in-demo}
+            client-secret: ${GOOGLE_CLIENT_SECRET:not-used-in-demo}
+
+demo:
+  seed-files: ${DEMO_SEED_FILES:/app/seed/seed-mock-data.sql,/app/seed/demo-user.sql}

@@ -18,7 +18,7 @@ Instructions for any AI coding assistant working in this repo.
 
 Context: `Proposal_Doc.pdf`, `Design_Doc.pdf`. Plans: `plans/SHARED.md`, `plans/PRIYAL.md`, `plans/SUJAL.md`. Skeleton guide: `SCAFFOLDING.md`.
 
-**Current stage:** Phase 2 done (seed data still to do). Phase 3 is the lab's feedback after the demo: more project and idea fields with built-in tags, member profiles with interest-based activity on Home, a Lab Manager role that gives and removes access, a People tab, and search filters (see `plans/SHARED.md`). Deployment is Phase 4.
+**Current stage:** Phase 3 done: the lab's six requests after the Phase 2 demo are merged (see `plans/SHARED.md`), and a demo Docker image is ready for the final submission. Deployment on the lab's machine is Phase 4.
 
 ## Team & ownership
 
@@ -35,7 +35,7 @@ Shared files where changes need care: `pom.xml`, `application.yml`.
 - Java 21, Maven, Spring Boot 4.1. Java is required by the course, so don't add other backend languages.
 - PostgreSQL 16+, Flyway migrations, Spring Data JPA.
 - Frontend: plain JS in `src/main/resources/static/`. No Node, no build step.
-- No Docker.
+- Docker only for the demo image graders run (`Dockerfile`, `docker/`); the lab installs from the README.
 - Tests: JUnit 5 with Zonky embedded Postgres (a real Postgres, **never H2**).
 
 ## Commands
@@ -63,6 +63,7 @@ Local overrides and secrets go in a git-ignored `.env` file.
 - Every page except the sign-in page (`static/login.html`), `/css/**` and `/fonts/**` requires Google sign-in (`tracker.auth.SecurityConfig`). Only `app_user` rows with `allowlisted = true` get in, checked at sign-in and again on every request (`AccessCheckFilter`), so removing someone signs them out. People are added and removed on the Manage access page (`tracker.auth.AccessService`, `static/js/access.js`) by a Lab Manager or an admin (`app_user.role`: `MEMBER`, `LAB_MANAGER`, `ADMIN`); use a migration only for the lab's first admin and Lab Manager.
 - Tests that need the database extend `tracker.support.PostgresTestBase` and are `@Transactional`, so they roll back. All tests share one database; a test that commits leaks rows into the others. Tests that need a signed-in user use `oidcLogin()` from spring-security-test.
 - `src/test/resources/seed-mock-data.sql` holds demo data for local databases only. `SeedDataTest` loads it in every build, so a migration that breaks the script fails the build: update the script in the same PR.
+- Demo mode (`tracker.demo`) exists only in the `demo` Spring profile, which only the `Dockerfile` turns on: a "Continue as demo user" sign-in as `demo@example.com` (a member, from `docker/demo-user.sql`) instead of Google. It refuses to start unless the database has the `demo.marker` table that `docker/entrypoint.sh` creates, so it can never open real data. Never turn it on anywhere else, and keep demo code out of other packages.
 - A scheduled worker resolves PENDING papers (`tracker.papers.PaperResolutionWorker`). It is off in tests (`PostgresTestBase`); a test that needs it turns it on with `papers.resolution-enabled=true`.
 - Paper resolvers are `PaperResolver` beans tried in `@Order`: Crossref, arXiv, page meta tags, then `PdfLlmResolver`, which reads a bare PDF's first two pages with the language model (only when `llm.enabled`; `source = MODEL`). A new rung is a new bean with the next `@Order`. `ResolutionLadderTest` runs the whole ladder against WireMock.
 - Frontend modules export a `render…(container)` function and build the page with `textContent`/DOM calls, never `innerHTML`, because titles and names come from outside sources. `static/js/app.js` registers each module as a tab with `registerTab(id, label, render, description)` and calls `render(container, { actions, heading, description, path })`: a fresh, empty container, the page header's action slot and text, and anything after the tab id in the URL (`#projects/12` gives `path` "12"). Use `getJson`/`sendJson` from `static/js/api.js` and the helpers in `static/js/ui.js`; `/api/**` answers `401` when signed out and `api.js` sends the user to sign-in.

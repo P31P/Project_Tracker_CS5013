@@ -59,3 +59,9 @@
 - Auto-fill (module F): `tracker.llm.LlmClient` talks to any OpenAI-style API (local Ollama by default, off unless `LLM_ENABLED=true`); `POST /api/autofill` turns a rough note into a title, description and tags and never saves; the model's answer is checked field by field, and anything unusable gives "Couldn't suggest", never an error page. A **Suggest** button in the New project dialog and the idea box fills the form for the user to check, hidden when auto-fill is off.
 - 21 new tests with WireMock standing in for the model (good, messy, missing, non-JSON and slow answers, Unicode, turned off). Also ran the real code against my local Ollama and checked the button in headless Chrome with auto-fill on and off.
 
+
+# 7th November
+
+- Demo image for the final submission (`Dockerfile`, `docker/`): the tracker with its own PostgreSQL 16 and the sample data, in a `demo` Spring profile. Graders press "Continue as demo user" instead of Google sign-in; the demo user is a plain member. Demo mode refuses to start unless the database has the `demo.marker` table the image's start script creates, so it can't open the lab's real data; without the profile nothing changes (tested both ways).
+- The seed data now has 8 real papers shared in Slack, with titles, authors and dates taken from Crossref and arXiv, plus votes and references on projects and ideas.
+- Found that a `.button` with the `hidden` attribute was still shown (the class's `display` wins over the browser's), so the Suggest button appeared even with auto-fill off. One `[hidden]` rule in `app.css` fixes it everywhere.

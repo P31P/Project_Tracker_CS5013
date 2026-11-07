@@ -14,6 +14,14 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 Then open http://localhost:8080. For demo data on a local database (16 projects, 12 ideas, with members, updates, votes and comments), run `psql -U tracker -d tracker -1 -v ON_ERROR_STOP=1 -f src/test/resources/seed-mock-data.sql` once.
 
+## Demo image
+For graders and anyone trying the tracker without a Google account or a database: one Docker image with its own PostgreSQL and sample data (16 projects, 12 ideas, 8 papers shared in Slack).
+```bash
+docker load -i raman-lab-tracker.tar        # or build it: docker build -t raman-lab-tracker .
+docker run -p 8080:8080 raman-lab-tracker
+```
+Open http://localhost:8080 and press **Continue as demo user** (a lab member, not an admin). Slack and auto-fill are off; to try Slack, pass its variables at run time (never put them in the image): `docker run --env-file .env.slack -p 8080:8080 raman-lab-tracker`, with `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, `SLACK_APP_TOKEN` and `SLACK_SOCKET_MODE_ENABLED=true`; new papers then need internet access to fill in their details. Demo mode only starts on the image's own database.
+
 ## API
 Signed-out API calls get `401`; pages redirect to the sign-in page (`/login.html`).
 - `GET /api/me`: email, name and `role` (`MEMBER`, `LAB_MANAGER` or `ADMIN`) of the signed-in user
