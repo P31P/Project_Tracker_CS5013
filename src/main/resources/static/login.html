@@ -34,19 +34,29 @@
         </section>
         <section class="login-card">
             <h2>Sign in</h2>
-            <p class="login-subtitle">Use the Google account the lab has added you with.</p>
+            <p id="login-subtitle" class="login-subtitle">Use the Google account the lab has added you with.</p>
             <p id="refused" class="notice notice-error" role="alert" hidden>
                 That Google account can't sign in to the Raman Lab tracker. Ask the lab's Lab Manager to add you, or sign in with another account.
             </p>
             <p id="signed-out" class="notice" hidden>You've signed out.</p>
-            <a class="button" href="/oauth2/authorization/google">Sign in with Google</a>
-            <p class="login-note">For Raman Lab members, IIT Madras</p>
+            <a id="google-sign-in" class="button" href="/oauth2/authorization/google">Sign in with Google</a>
+            <a id="demo-sign-in" class="button" href="/demo/sign-in" hidden>Continue as demo user</a>
+            <p id="login-note" class="login-note">For Raman Lab members, IIT Madras</p>
         </section>
     </main>
     <script>
         const params = new URLSearchParams(location.search);
         document.getElementById('refused').hidden = !params.has('error');
         document.getElementById('signed-out').hidden = !params.has('logout');
+        // only the demo Docker image answers 204 here; anywhere else this path redirects to sign-in, so nothing changes
+        fetch('/demo/available', { redirect: 'manual' }).then(response => {
+            if (response.status === 204) {
+                document.getElementById('google-sign-in').hidden = true;
+                document.getElementById('demo-sign-in').hidden = false;
+                document.getElementById('login-subtitle').textContent = 'Look around with sample data; nothing here is real.';
+                document.getElementById('login-note').textContent = 'Demo mode';
+            }
+        }).catch(() => {});
     </script>
 </body>
 </html>
